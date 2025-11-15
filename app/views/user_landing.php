@@ -178,7 +178,7 @@ if(session_status() === PHP_SESSION_NONE) session_start();
     </div>
   </div>
 
-  <div class="max-w-7xl mx-auto p-6">
+  <div class="w-full px-6 py-6">
 
     <!-- Success / Error Messages -->
     <?php if(!empty($success)): ?>
@@ -193,7 +193,7 @@ if(session_status() === PHP_SESSION_NONE) session_start();
     <?php endif; ?>
 
     <!-- Quick Stats -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
         <div style="background: #FFF5E1;" class="p-6 rounded-xl shadow-sm border user-card" style="border-color: #C19A6B;">
             <div class="flex items-center gap-4">
                 <div class="bg-[#C19A6B] p-3 rounded-lg">
@@ -326,63 +326,63 @@ if(session_status() === PHP_SESSION_NONE) session_start();
     </div>
 
     <!-- Rooms Grid -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6" id="roomsGrid">
+    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 3xl:grid-cols-7 gap-4" id="roomsGrid">
         <?php if(!empty($rooms)): ?>
             <?php foreach($rooms as $room): ?>
-                <div style="background: #FFF5E1;" class="p-6 rounded-xl shadow-sm border hover:shadow-md transition-all relative user-card room-card" style="border-color: #C19A6B;">
-                    <div class="absolute top-4 right-4">
-                        <span class="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs font-semibold">
+                <div style="background: #FFF5E1;" class="p-4 rounded-lg shadow-sm border hover:shadow-md transition-all relative user-card room-card" style="border-color: #C19A6B;">
+                    <div class="absolute top-3 right-3">
+                        <span class="bg-green-100 text-green-800 px-1.5 py-0.5 rounded-full text-xs font-semibold">
                             Available
                         </span>
                     </div>
-                    <div class="mb-4">
-                        <h2 class="text-xl font-bold text-[#5C4033] mb-2 room-number">Room #<?= htmlspecialchars($room['room_number']) ?></h2>
-                        <p class="text-[#5C4033] opacity-75 text-sm mb-1">
+                    <div class="mb-3">
+                        <h2 class="text-lg font-bold text-[#5C4033] mb-1 room-number">Room #<?= htmlspecialchars($room['room_number']) ?></h2>
+                        <p class="text-[#5C4033] opacity-75 text-xs mb-1">
                             <i class="fa-solid fa-bed text-[#C19A6B]"></i> 
                             <?= $room['beds'] ?? 'N/A' ?> Bed<?= ($room['beds'] ?? 0) > 1 ? 's' : '' ?>
                         </p>
-                        <p class="text-[#5C4033] opacity-75 text-sm mb-1">
+                        <p class="text-[#5C4033] opacity-75 text-xs mb-1">
                             <i class="fa-solid fa-users text-[#C19A6B]"></i> 
                             <?= $room['available'] ?> Space<?= $room['available'] > 1 ? 's' : '' ?> Available
                         </p>
-                        <p class="text-[#5C4033] opacity-75 text-sm mb-1">
+                        <p class="text-[#5C4033] opacity-75 text-xs mb-1">
                             <i class="fa-solid fa-door-open text-[#C19A6B]"></i> 
                             <strong><?= $room['available'] ?> Room<?= $room['available'] > 1 ? 's' : '' ?> can be reserved</strong>
                         </p>
-                        <p class="text-[#5C4033] opacity-75 text-sm mb-4 room-type">
+                        <p class="text-[#5C4033] opacity-75 text-xs mb-3 room-type">
                             <i class="fa-solid fa-tag text-[#C19A6B]"></i> 
                             Dormitory Room
                         </p>
-                        <div class="bg-[#e6ddd4] p-3 rounded-lg mb-4">
-                            <p class="text-2xl font-bold text-[#5C4033] room-payment">₱<?= number_format($room['payment'] ?? 0, 2) ?></p>
-                            <p class="text-[#5C4033] opacity-75 text-sm">per month</p>
+                        <div class="bg-[#e6ddd4] p-2 rounded-lg mb-3">
+                            <p class="text-lg font-bold text-[#5C4033] room-payment">₱<?= number_format($room['payment'] ?? 0, 2) ?></p>
+                            <p class="text-[#5C4033] opacity-75 text-xs">per month</p>
                         </div>
                     </div>
 
                     <!-- Confirmation Message Area -->
-                    <div id="confirm-msg-<?= $room['id'] ?>" class="hidden bg-yellow-50 border border-yellow-200 p-3 rounded-lg mb-3">
-                        <p class="text-yellow-800 text-sm mb-3">
+                    <div id="confirm-msg-<?= $room['id'] ?>" class="hidden bg-yellow-50 border border-yellow-200 p-2 rounded-lg mb-2">
+                        <p class="text-yellow-800 text-xs mb-2">
                             <i class="fa-solid fa-question-circle"></i> 
-                            How many rooms do you want to reserve in Room #<?= htmlspecialchars($room['room_number']) ?>?
+                            How many rooms in Room #<?= htmlspecialchars($room['room_number']) ?>?
                         </p>
-                        <div class="mb-3">
-                            <label class="block text-yellow-700 text-xs font-semibold mb-1">Number of rooms to reserve:</label>
-                            <div class="flex items-center gap-2">
-                                <button type="button" onclick="decreaseQuantity(<?= $room['id'] ?>)" class="bg-yellow-600 hover:bg-yellow-700 text-white w-8 h-8 rounded flex items-center justify-center text-sm">
+                        <div class="mb-2">
+                            <label class="block text-yellow-700 text-xs font-semibold mb-1">Quantity:</label>
+                            <div class="flex items-center gap-1 justify-center">
+                                <button type="button" onclick="decreaseQuantity(<?= $room['id'] ?>)" class="bg-yellow-600 hover:bg-yellow-700 text-white w-6 h-6 rounded flex items-center justify-center text-xs">
                                     <i class="fa-solid fa-minus"></i>
                                 </button>
-                                <input type="number" id="quantity-<?= $room['id'] ?>" value="1" min="1" max="<?= $room['available'] ?>" class="w-16 text-center border border-yellow-300 rounded px-2 py-1 text-sm" onchange="validateQuantity(<?= $room['id'] ?>, <?= $room['available'] ?>)">
-                                <button type="button" onclick="increaseQuantity(<?= $room['id'] ?>)" class="bg-yellow-600 hover:bg-yellow-700 text-white w-8 h-8 rounded flex items-center justify-center text-sm">
+                                <input type="number" id="quantity-<?= $room['id'] ?>" value="1" min="1" max="<?= $room['available'] ?>" class="w-12 text-center border border-yellow-300 rounded px-1 py-1 text-xs" onchange="validateQuantity(<?= $room['id'] ?>, <?= $room['available'] ?>)">
+                                <button type="button" onclick="increaseQuantity(<?= $room['id'] ?>)" class="bg-yellow-600 hover:bg-yellow-700 text-white w-6 h-6 rounded flex items-center justify-center text-xs">
                                     <i class="fa-solid fa-plus"></i>
                                 </button>
-                                <span class="text-yellow-700 text-xs">out of <?= $room['available'] ?> available</span>
                             </div>
+                            <span class="text-yellow-700 text-xs block text-center mt-1">of <?= $room['available'] ?> available</span>
                         </div>
-                        <div class="flex gap-2">
-                            <button onclick="confirmReservation(<?= $room['id'] ?>)" class="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded text-xs">
-                                <i class="fa-solid fa-check"></i> Reserve Selected
+                        <div class="flex gap-1">
+                            <button onclick="confirmReservation(<?= $room['id'] ?>)" class="flex-1 bg-green-500 hover:bg-green-600 text-white px-2 py-1 rounded text-xs">
+                                <i class="fa-solid fa-check"></i> Reserve
                             </button>
-                            <button onclick="cancelReservation(<?= $room['id'] ?>)" class="bg-gray-500 hover:bg-gray-600 text-white px-3 py-1 rounded text-xs">
+                            <button onclick="cancelReservation(<?= $room['id'] ?>)" class="flex-1 bg-gray-500 hover:bg-gray-600 text-white px-2 py-1 rounded text-xs">
                                 <i class="fa-solid fa-times"></i> Cancel
                             </button>
                         </div>
@@ -391,17 +391,17 @@ if(session_status() === PHP_SESSION_NONE) session_start();
                     <?php if(isset($_SESSION['user'])): ?>
                         <?php if($room['available'] > 0): ?>
                             <form method="POST" action="http://localhost/lasttry/index.php/user/reserve/<?= $room['id'] ?>" class="w-full" id="reservation-form-<?= $room['id'] ?>">
-                                <button type="button" onclick="showConfirmation(<?= $room['id'] ?>)" class="w-full text-white py-3 px-4 rounded-lg font-semibold transition-all hover:bg-[#B07A4B]" style="background: #C19A6B;" id="reserve-btn-<?= $room['id'] ?>">
+                                <button type="button" onclick="showConfirmation(<?= $room['id'] ?>)" class="w-full text-white py-2 px-3 rounded-lg font-semibold transition-all hover:bg-[#B07A4B] text-sm" style="background: #C19A6B;" id="reserve-btn-<?= $room['id'] ?>">
                                     <i class="fa-solid fa-paper-plane"></i> Request Reservation
                                 </button>
                             </form>
                         <?php else: ?>
-                            <button class="w-full bg-gray-300 text-gray-500 py-3 px-4 rounded-lg font-semibold cursor-not-allowed" disabled>
+                            <button class="w-full bg-gray-300 text-gray-500 py-2 px-3 rounded-lg font-semibold cursor-not-allowed text-sm" disabled>
                                 <i class="fa-solid fa-ban"></i> Not Available
                             </button>
                         <?php endif; ?>
                     <?php else: ?>
-                        <a href="<?= site_url('auth/login') ?>" class="block w-full bg-yellow-500 hover:bg-yellow-600 text-white py-3 px-4 rounded-lg font-semibold text-center transition-all">
+                        <a href="<?= site_url('auth/login') ?>" class="block w-full bg-yellow-500 hover:bg-yellow-600 text-white py-2 px-3 rounded-lg font-semibold text-center transition-all text-sm">
                             <i class="fa-solid fa-sign-in-alt"></i> Login to Reserve
                         </a>
                     <?php endif; ?>
@@ -680,7 +680,7 @@ function showMessage(message, type) {
     messageDiv.innerHTML = `<i class="fa-solid ${icon} text-lg"></i> ${message}`;
     
     // Insert message at the top of the main content
-    const mainContent = document.querySelector('.max-w-7xl.mx-auto.p-6');
+    const mainContent = document.querySelector('.w-full.px-6.py-6');
     if (mainContent) {
         mainContent.insertBefore(messageDiv, mainContent.firstChild);
         
