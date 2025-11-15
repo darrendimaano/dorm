@@ -138,7 +138,7 @@ if(session_status() === PHP_SESSION_NONE) session_start();
     </div>
   </div>
 
-  <div class="max-w-4xl mx-auto p-6">
+  <div class="w-full px-4 py-4">
     <!-- Success / Error Messages -->
     <?php if(!empty($success)): ?>
         <div class="bg-green-100 border border-green-200 text-green-700 p-4 rounded-lg mb-6 text-center shadow-sm">

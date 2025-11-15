@@ -113,141 +113,141 @@ foreach ($roomsAvailability as $roomNumber => $available) {
 </div>
 
 <!-- Main Content -->
-<div class="flex-1 ml-64 p-6 main-content">
+<div class="flex-1 ml-64 px-4 py-4 main-content">
 
-    <div class="flex items-center justify-between mb-8">
-        <h1 class="text-3xl font-bold text-[#5C4033]">Admin Dashboard</h1>
+    <div class="flex items-center justify-between mb-6">
+        <h1 class="text-2xl font-bold text-[#5C4033]">Admin Dashboard</h1>
         <button id="darkModeToggle" class="p-2 rounded-lg border border-[#C19A6B] hover:bg-[#C19A6B] hover:text-white transition">
             <i class="fa-solid fa-moon" id="darkModeIcon"></i>
         </button>
     </div>
 
     <!-- Stats Cards -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
-        <div class="bg-white p-6 rounded-2xl shadow border border-[#C19A6B] hover:shadow-lg transition card">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6 2xl:grid-cols-8 gap-4 mb-6">
+        <div class="bg-white p-4 rounded-xl shadow border border-[#C19A6B] hover:shadow-lg transition card">
             <div class="flex items-center justify-between">
                 <div>
-                    <h2 class="text-sm font-medium text-[#5C4033] opacity-75">Total Users</h2>
-                    <p class="text-2xl font-bold text-[#5C4033]"><?= $totalUsers ?></p>
+                    <h2 class="text-xs font-medium text-[#5C4033] opacity-75">Total Users</h2>
+                    <p class="text-xl font-bold text-[#5C4033]"><?= $totalUsers ?></p>
                 </div>
-                <div class="bg-blue-100 p-3 rounded-lg">
-                    <i class="fa-solid fa-users text-blue-600"></i>
+                <div class="bg-blue-100 p-2 rounded-lg">
+                    <i class="fa-solid fa-users text-blue-600 text-sm"></i>
                 </div>
             </div>
         </div>
         
-        <div class="bg-white p-6 rounded-2xl shadow border border-[#C19A6B] hover:shadow-lg transition card">
+        <div class="bg-white p-4 rounded-xl shadow border border-[#C19A6B] hover:shadow-lg transition card">
             <div class="flex items-center justify-between">
                 <div>
-                    <h2 class="text-sm font-medium text-[#5C4033] opacity-75">Total Rooms</h2>
-                    <p class="text-2xl font-bold text-[#5C4033]"><?= $totalRooms ?></p>
+                    <h2 class="text-xs font-medium text-[#5C4033] opacity-75">Total Rooms</h2>
+                    <p class="text-xl font-bold text-[#5C4033]"><?= $totalRooms ?></p>
                 </div>
-                <div class="bg-green-100 p-3 rounded-lg">
-                    <i class="fa-solid fa-bed text-green-600"></i>
+                <div class="bg-green-100 p-2 rounded-lg">
+                    <i class="fa-solid fa-bed text-green-600 text-sm"></i>
                 </div>
             </div>
         </div>
         
-        <div class="bg-white p-6 rounded-2xl shadow border border-[#C19A6B] hover:shadow-lg transition card">
+        <div class="bg-white p-4 rounded-xl shadow border border-[#C19A6B] hover:shadow-lg transition card">
             <div class="flex items-center justify-between">
                 <div>
-                    <h2 class="text-sm font-medium text-[#5C4033] opacity-75">Available Beds</h2>
-                    <p class="text-2xl font-bold text-[#5C4033]"><?= $availableRooms ?></p>
+                    <h2 class="text-xs font-medium text-[#5C4033] opacity-75">Available Beds</h2>
+                    <p class="text-xl font-bold text-[#5C4033]"><?= $availableRooms ?></p>
                 </div>
-                <div class="bg-yellow-100 p-3 rounded-lg">
-                    <i class="fa-solid fa-door-open text-yellow-600"></i>
+                <div class="bg-yellow-100 p-2 rounded-lg">
+                    <i class="fa-solid fa-door-open text-yellow-600 text-sm"></i>
                 </div>
             </div>
         </div>
         
-        <div class="bg-white p-6 rounded-2xl shadow border border-[#C19A6B] hover:shadow-lg transition card">
+        <div class="bg-white p-4 rounded-xl shadow border border-[#C19A6B] hover:shadow-lg transition card">
             <div class="flex items-center justify-between">
                 <div>
-                    <h2 class="text-sm font-medium text-[#5C4033] opacity-75">Pending Requests</h2>
-                    <p class="text-2xl font-bold text-orange-600"><?= $data['pendingCount'] ?? 0 ?></p>
+                    <h2 class="text-xs font-medium text-[#5C4033] opacity-75">Pending Requests</h2>
+                    <p class="text-xl font-bold text-orange-600"><?= $data['pendingCount'] ?? 0 ?></p>
                 </div>
-                <div class="bg-orange-100 p-3 rounded-lg">
-                    <i class="fa-solid fa-clock text-orange-600"></i>
+                <div class="bg-orange-100 p-2 rounded-lg">
+                    <i class="fa-solid fa-clock text-orange-600 text-sm"></i>
                 </div>
             </div>
         </div>
     </div>
     
     <!-- Quick Actions -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
-        <a href="<?= site_url('admin/reservations') ?>" class="bg-white p-6 rounded-2xl shadow border border-[#C19A6B] hover:shadow-lg transition card group">
+    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-4 mb-6">
+        <a href="<?= site_url('admin/reservations') ?>" class="bg-white p-4 rounded-xl shadow border border-[#C19A6B] hover:shadow-lg transition card group">
             <div class="flex items-center justify-between">
                 <div>
-                    <h3 class="text-lg font-semibold text-[#5C4033] group-hover:text-[#C19A6B] transition">Manage Reservations</h3>
-                    <p class="text-sm text-[#5C4033] opacity-75">View and approve pending requests</p>
-                    <p class="text-xl font-bold text-orange-600 mt-2"><?= $data['pendingCount'] ?? 0 ?> Pending</p>
+                    <h3 class="text-sm font-semibold text-[#5C4033] group-hover:text-[#C19A6B] transition">Manage Reservations</h3>
+                    <p class="text-xs text-[#5C4033] opacity-75">View and approve pending requests</p>
+                    <p class="text-lg font-bold text-orange-600 mt-1"><?= $data['pendingCount'] ?? 0 ?> Pending</p>
                 </div>
-                <div class="bg-orange-100 p-4 rounded-lg group-hover:bg-orange-200 transition">
-                    <i class="fa-solid fa-clipboard-check text-orange-600 text-xl"></i>
+                <div class="bg-orange-100 p-2 rounded-lg group-hover:bg-orange-200 transition">
+                    <i class="fa-solid fa-clipboard-check text-orange-600 text-lg"></i>
                 </div>
             </div>
         </a>
         
-        <a href="<?= site_url('users') ?>" class="bg-white p-6 rounded-2xl shadow border border-[#C19A6B] hover:shadow-lg transition card group">
+        <a href="<?= site_url('users') ?>" class="bg-white p-4 rounded-xl shadow border border-[#C19A6B] hover:shadow-lg transition card group">
             <div class="flex items-center justify-between">
                 <div>
-                    <h3 class="text-lg font-semibold text-[#5C4033] group-hover:text-[#C19A6B] transition">Manage Users</h3>
-                    <p class="text-sm text-[#5C4033] opacity-75">View and manage user accounts</p>
-                    <p class="text-xl font-bold text-blue-600 mt-2"><?= $totalUsers ?> Users</p>
+                    <h3 class="text-sm font-semibold text-[#5C4033] group-hover:text-[#C19A6B] transition">Manage Users</h3>
+                    <p class="text-xs text-[#5C4033] opacity-75">View and manage user accounts</p>
+                    <p class="text-lg font-bold text-blue-600 mt-1"><?= $totalUsers ?> Users</p>
                 </div>
-                <div class="bg-blue-100 p-4 rounded-lg group-hover:bg-blue-200 transition">
-                    <i class="fa-solid fa-users text-blue-600 text-xl"></i>
+                <div class="bg-blue-100 p-2 rounded-lg group-hover:bg-blue-200 transition">
+                    <i class="fa-solid fa-users text-blue-600 text-lg"></i>
                 </div>
             </div>
         </a>
         
-        <a href="<?= site_url('rooms') ?>" class="bg-white p-6 rounded-2xl shadow border border-[#C19A6B] hover:shadow-lg transition card group">
+        <a href="<?= site_url('rooms') ?>" class="bg-white p-4 rounded-xl shadow border border-[#C19A6B] hover:shadow-lg transition card group">
             <div class="flex items-center justify-between">
                 <div>
-                    <h3 class="text-lg font-semibold text-[#5C4033] group-hover:text-[#C19A6B] transition">Manage Rooms</h3>
-                    <p class="text-sm text-[#5C4033] opacity-75">View and manage room availability</p>
-                    <p class="text-xl font-bold text-green-600 mt-2"><?= $availableRooms ?> Available</p>
+                    <h3 class="text-sm font-semibold text-[#5C4033] group-hover:text-[#C19A6B] transition">Manage Rooms</h3>
+                    <p class="text-xs text-[#5C4033] opacity-75">View and manage room availability</p>
+                    <p class="text-lg font-bold text-green-600 mt-1"><?= $availableRooms ?> Available</p>
                 </div>
-                <div class="bg-green-100 p-4 rounded-lg group-hover:bg-green-200 transition">
-                    <i class="fa-solid fa-bed text-green-600 text-xl"></i>
+                <div class="bg-green-100 p-2 rounded-lg group-hover:bg-green-200 transition">
+                    <i class="fa-solid fa-bed text-green-600 text-lg"></i>
                 </div>
             </div>
         </a>
     </div>
 
     <!-- Charts -->
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-10">
+    <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4 mb-6">
 
-        <div class="bg-white p-6 rounded-2xl shadow border border-[#C19A6B] card">
-            <h2 class="text-lg font-semibold mb-4 text-[#5C4033]">Users Registered Per Month</h2>
-            <canvas id="usersChart" class="w-full h-64"></canvas>
+        <div class="bg-white p-4 rounded-xl shadow border border-[#C19A6B] card">
+            <h2 class="text-sm font-semibold mb-3 text-[#5C4033]">Users Registered Per Month</h2>
+            <canvas id="usersChart" class="w-full h-48"></canvas>
         </div>
 
-        <div class="bg-white p-6 rounded-2xl shadow border border-[#C19A6B]">
-            <h2 class="text-lg font-semibold mb-4 text-[#5C4033]">Rooms Availability</h2>
-            <canvas id="roomsChart" class="w-full h-64"></canvas>
+        <div class="bg-white p-4 rounded-xl shadow border border-[#C19A6B]">
+            <h2 class="text-sm font-semibold mb-3 text-[#5C4033]">Rooms Availability</h2>
+            <canvas id="roomsChart" class="w-full h-48"></canvas>
         </div>
 
     </div>
 
     <!-- Payment Notifications -->
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-10">
+    <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4 mb-6">
         <!-- Payment Reminders -->
-        <div class="bg-white p-6 rounded-2xl shadow border border-[#C19A6B] card">
-            <div class="flex items-center justify-between mb-4">
-                <h2 class="text-lg font-semibold text-[#5C4033] flex items-center gap-2">
+        <div class="bg-white p-4 rounded-xl shadow border border-[#C19A6B] card">
+            <div class="flex items-center justify-between mb-3">
+                <h2 class="text-sm font-semibold text-[#5C4033] flex items-center gap-2">
                     <i class="fa-solid fa-bell text-[#C19A6B]"></i>
                     Payment Alerts
                 </h2>
-                <a href="<?= site_url('admin/reports') ?>" class="text-sm text-[#C19A6B] hover:text-[#A67C52] font-medium">
+                <a href="<?= site_url('admin/reports') ?>" class="text-xs text-[#C19A6B] hover:text-[#A67C52] font-medium">
                     View All Reports →
                 </a>
             </div>
             
             <?php if (!empty($adminNotifications)): ?>
-                <div class="space-y-3 max-h-64 overflow-y-auto">
+                <div class="space-y-2 max-h-48 overflow-y-auto">
                     <?php foreach($adminNotifications as $notification): ?>
-                    <div class="p-3 rounded-lg border-l-4 <?= $notification['type'] === 'payment_overdue' ? 'border-red-500 bg-red-50' : 'border-yellow-500 bg-yellow-50' ?>">
+                    <div class="p-2 rounded-lg border-l-4 <?= $notification['type'] === 'payment_overdue' ? 'border-red-500 bg-red-50' : 'border-yellow-500 bg-yellow-50' ?>">
                         <div class="flex items-start justify-between">
                             <div>
                                 <p class="font-semibold text-sm text-[#5C4033]">

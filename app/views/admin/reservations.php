@@ -118,7 +118,7 @@ if(session_status() === PHP_SESSION_NONE) session_start();
     </div>
   </div>
 
-  <div class="w-full px-4 py-6">
+  <div class="w-full px-3 py-4">
     
     <!-- Success / Error Messages -->
     <?php if(!empty($success)): ?>
@@ -201,11 +201,11 @@ if(session_status() === PHP_SESSION_NONE) session_start();
     </div>
     
     <!-- Search Bar -->
-    <div class="relative mb-6 no-print">
-      <div class="relative max-w-md">
+    <div class="relative mb-4 no-print">
+      <div class="relative max-w-sm">
         <input type="text" id="searchInput" placeholder="Search reservations by tenant, room, or status..." 
-               class="w-full px-4 py-3 pl-10 border border-[#C19A6B] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C19A6B] bg-[#FFF5E1] text-[#5C4033]">
-        <i class="fa-solid fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-[#C19A6B]"></i>
+               class="w-full px-3 py-2 pl-8 border border-[#C19A6B] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C19A6B] bg-[#FFF5E1] text-[#5C4033] text-sm">
+        <i class="fa-solid fa-search absolute left-2 top-1/2 transform -translate-y-1/2 text-[#C19A6B]"></i>
       </div>
     </div>
 
@@ -217,35 +217,35 @@ if(session_status() === PHP_SESSION_NONE) session_start();
       </div>
       
     <?php if(!empty($pendingReservations)): ?>
-    <div class="w-full overflow-x-auto rounded-lg border border-[#C19A6B] shadow-lg bg-[#FFF5E1] mb-8">
+    <div class="w-full overflow-x-auto rounded-lg border border-[#C19A6B] shadow-lg bg-[#FFF5E1] mb-6">
     <table class="w-full border-collapse min-w-full">
         <thead>
-            <tr class="bg-[#C19A6B] text-white text-xs md:text-sm uppercase tracking-wide">
-                <th class="py-4 px-2 md:px-4 text-left">
+            <tr class="bg-[#C19A6B] text-white text-xs uppercase tracking-wide">
+                <th class="py-2 px-2 text-left">
                   <div class="flex items-center gap-1">
                     <i class="fa-solid fa-hashtag"></i>
                     <span class="hidden sm:inline">ID</span>
                   </div>
                 </th>
-                <th class="py-4 px-2 md:px-4 text-left">
+                <th class="py-2 px-2 text-left">
                   <div class="flex items-center gap-1">
                     <i class="fa-solid fa-user"></i>
                     <span>Tenant</span>
                   </div>
                 </th>
-                <th class="py-4 px-2 md:px-4 text-left hidden lg:table-cell">
+                <th class="py-2 px-2 text-left hidden lg:table-cell">
                   <div class="flex items-center gap-1">
                     <i class="fa-solid fa-envelope"></i>
                     <span>Email</span>
                   </div>
                 </th>
-                <th class="py-4 px-2 md:px-4 text-left">
+                <th class="py-2 px-2 text-left">
                   <div class="flex items-center gap-1">
                     <i class="fa-solid fa-bed"></i>
                     <span>Room</span>
                   </div>
                 </th>
-                <th class="py-4 px-2 md:px-4 text-center">
+                <th class="py-2 px-2 text-center">
                   <div class="flex items-center justify-center gap-1">
                     <i class="fa-solid fa-cogs"></i>
                     <span>Actions</span>

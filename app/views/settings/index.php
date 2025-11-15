@@ -95,8 +95,8 @@ if (session_status() === PHP_SESSION_NONE) session_start();
   </div>
 
   <!-- Settings Form -->
-  <div class="max-w-3xl mx-auto bg-[#FFF5E1] shadow-lg rounded-2xl p-8 border border-[#C19A6B] settings-card">
-    <h2 class="text-2xl font-bold mb-6 text-[#5C4033]">Update Settings</h2>
+  <div class="w-full bg-[#FFF5E1] shadow-lg rounded-xl p-6 border border-[#C19A6B] settings-card mx-4">
+    <h2 class="text-xl font-bold mb-4 text-[#5C4033]">Update Settings</h2>
 
     <form method="POST" class="flex flex-col gap-5">
       <div>

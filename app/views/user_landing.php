@@ -97,6 +97,77 @@ if(session_status() === PHP_SESSION_NONE) session_start();
   #sidebar.collapsed .sidebar-text {
     display: none;
   }
+  
+  /* Modern Professional Enhancements */
+  .user-card {
+    transition: all 0.3s ease;
+    border: 1px solid rgba(193, 154, 107, 0.2);
+    backdrop-filter: blur(5px);
+  }
+  .user-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(193, 154, 107, 0.15);
+    border-color: #C19A6B;
+  }
+  
+  /* Enhanced grid spacing for full-width */
+  .rooms-grid-modern {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1rem;
+    width: 100%;
+  }
+  
+  @media (min-width: 1024px) {
+    .rooms-grid-modern {
+      grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    }
+  }
+  
+  @media (min-width: 1280px) {
+    .rooms-grid-modern {
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    }
+  }
+  
+  @media (min-width: 1536px) {
+    .rooms-grid-modern {
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    }
+  }
+  
+  /* Professional button hover effects */
+  .btn-modern {
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  }
+  .btn-modern:hover {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    transform: translateY(-1px);
+  }
+  
+  /* Modern card styling */
+  .card-modern {
+    background: rgba(255, 245, 225, 0.95);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(193, 154, 107, 0.2);
+  }
+  
+  /* Smooth scrollbars */
+  ::-webkit-scrollbar {
+    width: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 3px;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #C19A6B;
+    border-radius: 3px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #B07A4B;
+  }
 </style>
 </head>
 <body class="min-h-screen transition-colors">
@@ -194,7 +265,7 @@ if(session_status() === PHP_SESSION_NONE) session_start();
 
     <!-- Quick Stats -->
     <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
-        <div style="background: #FFF5E1;" class="p-6 rounded-xl shadow-sm border user-card" style="border-color: #C19A6B;">
+        <div class="card-modern p-6 rounded-xl shadow-sm border user-card btn-modern" style="border-color: #C19A6B;">
             <div class="flex items-center gap-4">
                 <div class="bg-[#C19A6B] p-3 rounded-lg">
                     <i class="fa-solid fa-bed text-white text-xl"></i>
@@ -205,7 +276,7 @@ if(session_status() === PHP_SESSION_NONE) session_start();
                 </div>
             </div>
         </div>
-        <div style="background: #FFF5E1;" class="p-6 rounded-xl shadow-sm border user-card" style="border-color: #C19A6B;">
+        <div class="card-modern p-6 rounded-xl shadow-sm border user-card btn-modern" style="border-color: #C19A6B;">
             <div class="flex items-center gap-4">
                 <div class="bg-yellow-100 p-3 rounded-lg">
                     <i class="fa-solid fa-clock text-yellow-600 text-xl"></i>
@@ -216,7 +287,7 @@ if(session_status() === PHP_SESSION_NONE) session_start();
                 </div>
             </div>
         </div>
-        <div style="background: #FFF5E1;" class="p-6 rounded-xl shadow-sm border user-card" style="border-color: #C19A6B;">
+        <div class="card-modern p-6 rounded-xl shadow-sm border user-card btn-modern" style="border-color: #C19A6B;">
             <div class="flex items-center gap-4">
                 <div class="bg-green-100 p-3 rounded-lg">
                     <i class="fa-solid fa-shield-alt text-green-600 text-xl"></i>
@@ -326,10 +397,10 @@ if(session_status() === PHP_SESSION_NONE) session_start();
     </div>
 
     <!-- Rooms Grid -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 3xl:grid-cols-7 gap-4" id="roomsGrid">
+    <div class="rooms-grid-modern" id="roomsGrid">
         <?php if(!empty($rooms)): ?>
             <?php foreach($rooms as $room): ?>
-                <div style="background: #FFF5E1;" class="p-4 rounded-lg shadow-sm border hover:shadow-md transition-all relative user-card room-card" style="border-color: #C19A6B;">
+                <div class="card-modern p-4 rounded-lg shadow-sm border hover:shadow-md transition-all relative user-card room-card btn-modern" style="border-color: #C19A6B;">
                     <div class="absolute top-3 right-3">
                         <span class="bg-green-100 text-green-800 px-1.5 py-0.5 rounded-full text-xs font-semibold">
                             Available

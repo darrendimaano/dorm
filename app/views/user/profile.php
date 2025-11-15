@@ -89,7 +89,7 @@ if(session_status() === PHP_SESSION_NONE) session_start();
     </div>
   </div>
 
-  <div class="max-w-4xl mx-auto p-6">
+  <div class="w-full px-4 py-4">
     
     <!-- Success / Error Messages -->
     <?php if(!empty($success)): ?>

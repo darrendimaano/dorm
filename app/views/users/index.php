@@ -67,7 +67,7 @@ defined('PREVENT_DIRECT_ACCESS') OR exit('No direct script access allowed');
     <h1 class="font-bold text-lg text-[#5C4033]">Users</h1>
   </div>
 
-  <div class="max-w-6xl mx-auto mt-6 px-4">
+  <div class="w-full mt-4 px-3">
 
     <!-- Management Links Section -->
     <div class="mb-6 rounded-lg p-6 shadow-lg border border-[#C19A6B]" style="background: #FFF5E1;">

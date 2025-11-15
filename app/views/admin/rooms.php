@@ -59,7 +59,7 @@
   <div style="background: #FFF5E1;" class="shadow-md flex items-center justify-between px-4 py-3 md:ml-0">
     <h1 class="font-bold text-lg text-[#5C4033]">Advanced Room Management</h1>
   </div>
-  <div class="max-w-6xl mx-auto mt-6 px-4">
+  <div class="w-full mt-4 px-3">
         <!-- Header -->
         <div style="background: #FFF5E1;" class="rounded-lg shadow-lg p-6 mb-6 border" style="border-color: #C19A6B;">
             <div class="flex justify-between items-center">
