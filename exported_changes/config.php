@@ -79,7 +79,7 @@ $config['ENVIRONMENT']             = 'development';
 | WARNING: You MUST set this value!
 |
 */
-$config['base_url'] 				= 'http://localhost/lasttry/';
+$config['base_url'] 				= $_ENV['APP_URL'] ?? 'http://localhost:8000/';
 
 /*
 |--------------------------------------------------------------------------
@@ -105,7 +105,7 @@ $config['index_page']               = 'index.php';
 |   3 = All
 |
 */
-$config['log_threshold']            = 3;
+$config['log_threshold']            = 0;
 $config['log_dir']                  = 'runtime/logs/';
 
 /*

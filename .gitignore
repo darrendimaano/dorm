@@ -6,10 +6,38 @@ runtime/*
 !runtime/.htaccess
 !runtime/index.html
 
+# Development and setup files
+changelog.txt
+darkmode_settings.sql
+darkmode_settings_simple.sql
+database_setup.sql
+database_setup_simple.sql
+htaccess.example
+maintenance_announcements.sql
+rooms_image_hash.sql
+setup_maintenance_announcements.php
+tenant_management_database.sql
+README.md
+LICENSE
+
+# Console files
+console/
+
+# Cache and logs
+*.log
+*.tmp
+Thumbs.db
+
+# Environment files
+.env
+.env.local
+.env.production
+
 # IDE Files
 #-------------------------
 /nbproject/
 .idea/*
+.vscode/
 
 ## Sublime Text cache files
 *.tmlanguage.cache
@@ -17,3 +45,7 @@ runtime/*
 *.stTheme.cache
 *.sublime-workspace
 *.sublime-project
+
+# Keep uploads folder structure but ignore contents
+public/uploads/*
+!public/uploads/.gitkeep
