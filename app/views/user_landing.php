@@ -345,6 +345,10 @@ if(session_status() === PHP_SESSION_NONE) session_start();
                             <i class="fa-solid fa-users text-[#C19A6B]"></i> 
                             <?= $room['available'] ?> Space<?= $room['available'] > 1 ? 's' : '' ?> Available
                         </p>
+                        <p class="text-[#5C4033] opacity-75 text-sm mb-1">
+                            <i class="fa-solid fa-door-open text-[#C19A6B]"></i> 
+                            <strong><?= $room['available'] ?> Room<?= $room['available'] > 1 ? 's' : '' ?> can be reserved</strong>
+                        </p>
                         <p class="text-[#5C4033] opacity-75 text-sm mb-4 room-type">
                             <i class="fa-solid fa-tag text-[#C19A6B]"></i> 
                             Dormitory Room
@@ -355,10 +359,26 @@ if(session_status() === PHP_SESSION_NONE) session_start();
                         </div>
                     </div>
 
+                    <!-- Confirmation Message Area -->
+                    <div id="confirm-msg-<?= $room['id'] ?>" class="hidden bg-yellow-50 border border-yellow-200 p-3 rounded-lg mb-3">
+                        <p class="text-yellow-800 text-sm mb-2">
+                            <i class="fa-solid fa-question-circle"></i> 
+                            Are you sure you want to request a reservation for Room #<?= htmlspecialchars($room['room_number']) ?>?
+                        </p>
+                        <div class="flex gap-2">
+                            <button onclick="confirmReservation(<?= $room['id'] ?>)" class="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded text-xs">
+                                <i class="fa-solid fa-check"></i> Yes, Reserve
+                            </button>
+                            <button onclick="cancelReservation(<?= $room['id'] ?>)" class="bg-gray-500 hover:bg-gray-600 text-white px-3 py-1 rounded text-xs">
+                                <i class="fa-solid fa-times"></i> Cancel
+                            </button>
+                        </div>
+                    </div>
+
                     <?php if(isset($_SESSION['user'])): ?>
                         <?php if($room['available'] > 0): ?>
-                            <form method="POST" action="http://localhost/lasttry/index.php/user/reserve/<?= $room['id'] ?>" class="w-full">
-                                <button type="submit" class="w-full text-white py-3 px-4 rounded-lg font-semibold transition-all hover:bg-[#B07A4B]" style="background: #C19A6B;" onclick="return confirm('Are you sure you want to request a reservation for Room #<?= htmlspecialchars($room['room_number']) ?>?')">
+                            <form method="POST" action="http://localhost/lasttry/index.php/user/reserve/<?= $room['id'] ?>" class="w-full" id="reservation-form-<?= $room['id'] ?>">
+                                <button type="button" onclick="showConfirmation(<?= $room['id'] ?>)" class="w-full text-white py-3 px-4 rounded-lg font-semibold transition-all hover:bg-[#B07A4B]" style="background: #C19A6B;" id="reserve-btn-<?= $room['id'] ?>">
                                     <i class="fa-solid fa-paper-plane"></i> Request Reservation
                                 </button>
                             </form>
@@ -667,6 +687,95 @@ function showMessage(message, type) {
                 }, 300);
             }
         }, 5000);
+    }
+}
+
+// Function to show inline confirmation
+function showConfirmation(roomId) {
+    // Hide the reserve button and show confirmation message
+    const reserveBtn = document.getElementById(`reserve-btn-${roomId}`);
+    const confirmMsg = document.getElementById(`confirm-msg-${roomId}`);
+    
+    if (reserveBtn && confirmMsg) {
+        reserveBtn.style.display = 'none';
+        confirmMsg.classList.remove('hidden');
+    }
+}
+
+// Function to cancel reservation
+function cancelReservation(roomId) {
+    // Show the reserve button and hide confirmation message
+    const reserveBtn = document.getElementById(`reserve-btn-${roomId}`);
+    const confirmMsg = document.getElementById(`confirm-msg-${roomId}`);
+    
+    if (reserveBtn && confirmMsg) {
+        reserveBtn.style.display = 'block';
+        confirmMsg.classList.add('hidden');
+    }
+}
+
+// Function to confirm reservation
+async function confirmReservation(roomId) {
+    const form = document.getElementById(`reservation-form-${roomId}`);
+    const confirmMsg = document.getElementById(`confirm-msg-${roomId}`);
+    
+    // Hide confirmation message
+    if (confirmMsg) {
+        confirmMsg.classList.add('hidden');
+    }
+    
+    // Show loading state
+    if (confirmMsg) {
+        confirmMsg.innerHTML = `
+            <p class="text-blue-800 text-sm">
+                <i class="fa-solid fa-spinner fa-spin"></i> 
+                Processing your reservation request...
+            </p>
+        `;
+        confirmMsg.classList.remove('hidden');
+        confirmMsg.className = confirmMsg.className.replace('bg-yellow-50 border-yellow-200', 'bg-blue-50 border-blue-200');
+    }
+    
+    try {
+        // Submit reservation via AJAX
+        const response = await fetch(`<?= site_url('user/reserve/') ?>${roomId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: `room_id=${roomId}`
+        });
+        
+        const result = await response.json();
+        
+        // Show message on the same page
+        showMessage(result.message, result.success ? 'success' : 'error');
+        
+        // If successful, refresh the page stats
+        if (result.success) {
+            setTimeout(() => {
+                location.reload();
+            }, 2000);
+        } else {
+            // Reset the button state if there was an error
+            const reserveBtn = document.getElementById(`reserve-btn-${roomId}`);
+            if (reserveBtn && confirmMsg) {
+                reserveBtn.style.display = 'block';
+                confirmMsg.classList.add('hidden');
+            }
+        }
+        
+    } catch (fetchError) {
+        console.error('AJAX Error:', fetchError);
+        showMessage('An error occurred while processing your request. Please try again.', 'error');
+        
+        // Reset the button state on error
+        const reserveBtn = document.getElementById(`reserve-btn-${roomId}`);
+        if (reserveBtn && confirmMsg) {
+            reserveBtn.style.display = 'block';
+            confirmMsg.classList.add('hidden');
+        }
     }
 }
 </script>
