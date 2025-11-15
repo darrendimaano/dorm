@@ -162,6 +162,10 @@ class UserLandingController extends Controller {
 
         try {
             $pdo = $this->getDbConnection();
+            
+            // Get quantity from POST data (default to 1 if not provided)
+            $quantity = isset($_POST['quantity']) ? (int)$_POST['quantity'] : 1;
+            if ($quantity < 1) $quantity = 1;
 
             // Get the room
             $stmt = $pdo->prepare("SELECT * FROM rooms WHERE id = ?");
@@ -174,25 +178,48 @@ class UserLandingController extends Controller {
             } elseif($room['available'] <= 0) {
                 $message = "Room is not available.";
                 $success = false;
+            } elseif($quantity > $room['available']) {
+                $message = "Not enough rooms available. Only {$room['available']} room(s) available.";
+                $success = false;
             } else {
                 // Check if user already has a pending reservation for this room
-                $checkStmt = $pdo->prepare("SELECT id FROM reservations WHERE user_id = ? AND room_id = ? AND status = 'pending'");
+                $checkStmt = $pdo->prepare("SELECT COUNT(*) as count FROM reservations WHERE user_id = ? AND room_id = ? AND status = 'pending'");
                 $checkStmt->execute([$_SESSION['user'], $id]);
+                $existingReservations = $checkStmt->fetch(PDO::FETCH_ASSOC)['count'];
                 
-                if($checkStmt->rowCount() > 0) {
+                if($existingReservations > 0) {
                     $message = "You already have a pending reservation for this room.";
                     $success = false;
                 } else {
-                    // Create a pending reservation
-                    $insert = $pdo->prepare("INSERT INTO reservations (user_id, room_id, status, reserved_at) VALUES (?, ?, 'pending', NOW())");
-                    $result = $insert->execute([$_SESSION['user'], $id]);
-
-                    if($result) {
-                        $message = "Reservation request submitted successfully! Please wait for admin approval.";
-                        $success = true;
-                    } else {
-                        $message = "Failed to submit reservation request.";
-                        $success = false;
+                    // Begin transaction for multiple reservations
+                    $pdo->beginTransaction();
+                    
+                    try {
+                        $successCount = 0;
+                        
+                        // Create multiple pending reservations
+                        $insert = $pdo->prepare("INSERT INTO reservations (user_id, room_id, status, reserved_at) VALUES (?, ?, 'pending', NOW())");
+                        
+                        for($i = 0; $i < $quantity; $i++) {
+                            $result = $insert->execute([$_SESSION['user'], $id]);
+                            if($result) {
+                                $successCount++;
+                            }
+                        }
+                        
+                        if($successCount == $quantity) {
+                            $pdo->commit();
+                            $message = "Reservation request submitted successfully! {$quantity} room(s) requested for approval.";
+                            $success = true;
+                        } else {
+                            $pdo->rollback();
+                            $message = "Failed to submit all reservation requests.";
+                            $success = false;
+                        }
+                        
+                    } catch(PDOException $e) {
+                        $pdo->rollback();
+                        throw $e;
                     }
                 }
             }

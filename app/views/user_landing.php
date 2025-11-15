@@ -361,13 +361,26 @@ if(session_status() === PHP_SESSION_NONE) session_start();
 
                     <!-- Confirmation Message Area -->
                     <div id="confirm-msg-<?= $room['id'] ?>" class="hidden bg-yellow-50 border border-yellow-200 p-3 rounded-lg mb-3">
-                        <p class="text-yellow-800 text-sm mb-2">
+                        <p class="text-yellow-800 text-sm mb-3">
                             <i class="fa-solid fa-question-circle"></i> 
-                            Are you sure you want to request a reservation for Room #<?= htmlspecialchars($room['room_number']) ?>?
+                            How many rooms do you want to reserve in Room #<?= htmlspecialchars($room['room_number']) ?>?
                         </p>
+                        <div class="mb-3">
+                            <label class="block text-yellow-700 text-xs font-semibold mb-1">Number of rooms to reserve:</label>
+                            <div class="flex items-center gap-2">
+                                <button type="button" onclick="decreaseQuantity(<?= $room['id'] ?>)" class="bg-yellow-600 hover:bg-yellow-700 text-white w-8 h-8 rounded flex items-center justify-center text-sm">
+                                    <i class="fa-solid fa-minus"></i>
+                                </button>
+                                <input type="number" id="quantity-<?= $room['id'] ?>" value="1" min="1" max="<?= $room['available'] ?>" class="w-16 text-center border border-yellow-300 rounded px-2 py-1 text-sm" onchange="validateQuantity(<?= $room['id'] ?>, <?= $room['available'] ?>)">
+                                <button type="button" onclick="increaseQuantity(<?= $room['id'] ?>)" class="bg-yellow-600 hover:bg-yellow-700 text-white w-8 h-8 rounded flex items-center justify-center text-sm">
+                                    <i class="fa-solid fa-plus"></i>
+                                </button>
+                                <span class="text-yellow-700 text-xs">out of <?= $room['available'] ?> available</span>
+                            </div>
+                        </div>
                         <div class="flex gap-2">
                             <button onclick="confirmReservation(<?= $room['id'] ?>)" class="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded text-xs">
-                                <i class="fa-solid fa-check"></i> Yes, Reserve
+                                <i class="fa-solid fa-check"></i> Reserve Selected
                             </button>
                             <button onclick="cancelReservation(<?= $room['id'] ?>)" class="bg-gray-500 hover:bg-gray-600 text-white px-3 py-1 rounded text-xs">
                                 <i class="fa-solid fa-times"></i> Cancel
@@ -702,6 +715,39 @@ function showConfirmation(roomId) {
     }
 }
 
+// Function to validate quantity input
+function validateQuantity(roomId, maxAvailable) {
+    const quantityInput = document.getElementById(`quantity-${roomId}`);
+    let value = parseInt(quantityInput.value);
+    
+    if (isNaN(value) || value < 1) {
+        quantityInput.value = 1;
+    } else if (value > maxAvailable) {
+        quantityInput.value = maxAvailable;
+    }
+}
+
+// Function to increase quantity
+function increaseQuantity(roomId) {
+    const quantityInput = document.getElementById(`quantity-${roomId}`);
+    const max = parseInt(quantityInput.getAttribute('max'));
+    const current = parseInt(quantityInput.value);
+    
+    if (current < max) {
+        quantityInput.value = current + 1;
+    }
+}
+
+// Function to decrease quantity
+function decreaseQuantity(roomId) {
+    const quantityInput = document.getElementById(`quantity-${roomId}`);
+    const current = parseInt(quantityInput.value);
+    
+    if (current > 1) {
+        quantityInput.value = current - 1;
+    }
+}
+
 // Function to cancel reservation
 function cancelReservation(roomId) {
     // Show the reserve button and hide confirmation message
@@ -718,6 +764,8 @@ function cancelReservation(roomId) {
 async function confirmReservation(roomId) {
     const form = document.getElementById(`reservation-form-${roomId}`);
     const confirmMsg = document.getElementById(`confirm-msg-${roomId}`);
+    const quantityInput = document.getElementById(`quantity-${roomId}`);
+    const quantity = quantityInput ? quantityInput.value : 1;
     
     // Hide confirmation message
     if (confirmMsg) {
@@ -729,7 +777,7 @@ async function confirmReservation(roomId) {
         confirmMsg.innerHTML = `
             <p class="text-blue-800 text-sm">
                 <i class="fa-solid fa-spinner fa-spin"></i> 
-                Processing your reservation request...
+                Processing your reservation request for ${quantity} room${quantity > 1 ? 's' : ''}...
             </p>
         `;
         confirmMsg.classList.remove('hidden');
@@ -737,14 +785,14 @@ async function confirmReservation(roomId) {
     }
     
     try {
-        // Submit reservation via AJAX
+        // Submit reservation via AJAX with quantity
         const response = await fetch(`<?= site_url('user/reserve/') ?>${roomId}`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
                 'X-Requested-With': 'XMLHttpRequest'
             },
-            body: `room_id=${roomId}`
+            body: `room_id=${roomId}&quantity=${quantity}`
         });
         
         const result = await response.json();
