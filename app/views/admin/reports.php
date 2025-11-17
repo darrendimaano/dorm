@@ -118,7 +118,7 @@ if(session_status() === PHP_SESSION_NONE) session_start();
     </div>
   </div>
 
-  <div class="w-full px-4 py-6">
+  <div class="w-full px-3 py-4">
     
     <!-- Success / Error Messages -->
     <?php if(!empty($success)): ?>
@@ -155,79 +155,79 @@ if(session_status() === PHP_SESSION_NONE) session_start();
     <?php endif; ?>
 
     <!-- Summary Statistics -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <div class="bg-[#FFF5E1] rounded-xl p-6 shadow-lg border border-[#E5D3B3] hover:shadow-xl transition-shadow">
+    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-4 mb-6">
+        <div class="bg-[#FFF5E1] rounded-lg p-4 shadow-lg border border-[#E5D3B3] hover:shadow-xl transition-shadow">
             <div class="flex items-center justify-between">
                 <div>
-                    <p class="text-[#5C4033] text-sm opacity-75">Active Tenants</p>
-                    <p class="text-3xl font-bold text-[#C19A6B]"><?= $summary['total_active_tenants'] ?? 0 ?></p>
+                    <p class="text-[#5C4033] text-xs opacity-75">Active Tenants</p>
+                    <p class="text-xl font-bold text-[#C19A6B]"><?= $summary['total_active_tenants'] ?? 0 ?></p>
                 </div>
-                <i class="fa-solid fa-users text-[#C19A6B] text-3xl"></i>
+                <i class="fa-solid fa-users text-[#C19A6B] text-lg"></i>
             </div>
         </div>
         
-        <div class="bg-[#FFF5E1] rounded-xl p-6 shadow-lg border border-[#E5D3B3] hover:shadow-xl transition-shadow">
+        <div class="bg-[#FFF5E1] rounded-lg p-4 shadow-lg border border-[#E5D3B3] hover:shadow-xl transition-shadow">
             <div class="flex items-center justify-between">
                 <div>
-                    <p class="text-[#5C4033] text-sm opacity-75">Overdue Payments</p>
-                    <p class="text-3xl font-bold text-red-600"><?= $summary['overdue_tenants'] ?? 0 ?></p>
+                    <p class="text-[#5C4033] text-xs opacity-75">Overdue Payments</p>
+                    <p class="text-xl font-bold text-red-600"><?= $summary['overdue_tenants'] ?? 0 ?></p>
                 </div>
-                <i class="fa-solid fa-exclamation-triangle text-red-500 text-3xl"></i>
+                <i class="fa-solid fa-exclamation-triangle text-red-500 text-lg"></i>
             </div>
         </div>
         
-        <div class="bg-[#FFF5E1] rounded-xl p-6 shadow-lg border border-[#E5D3B3] hover:shadow-xl transition-shadow">
+        <div class="bg-[#FFF5E1] rounded-lg p-4 shadow-lg border border-[#E5D3B3] hover:shadow-xl transition-shadow">
             <div class="flex items-center justify-between">
                 <div>
-                    <p class="text-[#5C4033] text-sm opacity-75">Due Soon</p>
-                    <p class="text-3xl font-bold text-orange-600"><?= $summary['due_soon_tenants'] ?? 0 ?></p>
+                    <p class="text-[#5C4033] text-xs opacity-75">Due Soon</p>
+                    <p class="text-xl font-bold text-orange-600"><?= $summary['due_soon_tenants'] ?? 0 ?></p>
                 </div>
-                <i class="fa-solid fa-clock text-orange-500 text-3xl"></i>
+                <i class="fa-solid fa-clock text-orange-500 text-lg"></i>
             </div>
         </div>
         
-        <div class="bg-[#FFF5E1] rounded-xl p-6 shadow-lg border border-[#E5D3B3] hover:shadow-xl transition-shadow">
+        <div class="bg-[#FFF5E1] rounded-lg p-4 shadow-lg border border-[#E5D3B3] hover:shadow-xl transition-shadow">
             <div class="flex items-center justify-between">
                 <div>
-                    <p class="text-[#5C4033] text-sm opacity-75">Monthly Revenue</p>
-                    <p class="text-2xl font-bold text-[#C19A6B]">₱<?= number_format($summary['total_monthly_revenue'] ?? 0, 2) ?></p>
+                    <p class="text-[#5C4033] text-xs opacity-75">Monthly Revenue</p>
+                    <p class="text-lg font-bold text-[#C19A6B]">₱<?= number_format($summary['total_monthly_revenue'] ?? 0, 2) ?></p>
                 </div>
-                <i class="fa-solid fa-peso-sign text-[#C19A6B] text-3xl"></i>
+                <i class="fa-solid fa-peso-sign text-[#C19A6B] text-lg"></i>
             </div>
         </div>
     </div>
 
     <!-- Quick Actions Bar -->
-    <div class="flex flex-wrap gap-4 mb-8">
+    <div class="flex flex-wrap gap-2 mb-6">
         <a href="<?= site_url('admin/reports/payment-history') ?>" 
-           class="flex items-center gap-2 px-6 py-3 bg-[#C19A6B] text-white rounded-xl hover:bg-[#A67C52] transition-all duration-200 shadow-lg font-semibold">
+           class="flex items-center gap-2 px-4 py-2 bg-[#C19A6B] text-white rounded-lg hover:bg-[#A67C52] transition-all duration-200 shadow-lg font-semibold text-sm">
             <i class="fa-solid fa-history"></i>
             <span>Payment History</span>
         </a>
         
         <a href="<?= site_url('admin/reports/payment-history/download-csv') ?>" 
-           class="flex items-center gap-2 px-6 py-3 border-2 border-[#C19A6B] text-[#5C4033] rounded-xl hover:bg-[#C19A6B] hover:text-white transition-all duration-200 font-semibold">
+           class="flex items-center gap-2 px-4 py-2 border-2 border-[#C19A6B] text-[#5C4033] rounded-lg hover:bg-[#C19A6B] hover:text-white transition-all duration-200 font-semibold text-sm">
             <i class="fa-solid fa-download"></i>
             <span>Download CSV</span>
         </a>
         
         <button onclick="window.print()" 
-                class="flex items-center gap-2 px-6 py-3 border-2 border-[#C19A6B] text-[#5C4033] rounded-xl hover:bg-[#C19A6B] hover:text-white transition-all duration-200 font-semibold">
+                class="flex items-center gap-2 px-4 py-2 border-2 border-[#C19A6B] text-[#5C4033] rounded-lg hover:bg-[#C19A6B] hover:text-white transition-all duration-200 font-semibold text-sm">
             <i class="fa-solid fa-print"></i>
             <span>Print Current View</span>
         </button>
         
         <button onclick="runPaymentReminders()" 
-                class="flex items-center gap-2 px-6 py-3 bg-[#8B7355] text-white rounded-xl hover:bg-[#6B5B48] transition-all duration-200 font-semibold">
+                class="flex items-center gap-2 px-4 py-2 bg-[#8B7355] text-white rounded-lg hover:bg-[#6B5B48] transition-all duration-200 font-semibold text-sm">
             <i class="fa-solid fa-bell"></i>
             <span>Send Reminders</span>
         </button>
     </div>
 
     <!-- Tenant Reports Table -->
-    <div class="bg-[#FFF5E1] rounded-xl shadow-lg border border-[#E5D3B3] overflow-hidden mb-8">
-        <div class="px-6 py-4" style="background: linear-gradient(135deg, #C19A6B 0%, #B07A4B 100%);">
-            <h2 class="text-xl font-bold text-white flex items-center gap-2">
+    <div class="bg-[#FFF5E1] rounded-lg shadow-lg border border-[#E5D3B3] overflow-hidden mb-6">
+        <div class="px-4 py-3" style="background: linear-gradient(135deg, #C19A6B 0%, #B07A4B 100%);">
+            <h2 class="text-lg font-bold text-white flex items-center gap-2">
                 <i class="fa-solid fa-table"></i>
                 Tenant Reports & Payment Tracking
             </h2>
@@ -238,13 +238,13 @@ if(session_status() === PHP_SESSION_NONE) session_start();
             <table class="w-full">
                 <thead style="background: #FFF5E1; color: #5C4033;" class="border-b border-[#E5D3B3]">
                     <tr>
-                        <th class="py-4 px-4 text-left font-semibold">
+                        <th class="py-2 px-3 text-left font-semibold text-xs">
                             <div class="flex items-center gap-1">
                                 <i class="fa-solid fa-user"></i>
                                 <span>Tenant</span>
                             </div>
                         </th>
-                        <th class="py-4 px-4 text-left font-semibold">
+                        <th class="py-2 px-3 text-left font-semibold text-xs">
                             <div class="flex items-center gap-1">
                                 <i class="fa-solid fa-bed"></i>
                                 <span>Room</span>
