@@ -44,6 +44,14 @@ $router->get('/admin/reservations', 'AdminReservationsController::index');
 $router->post('/admin/reservations/approveAction', 'AdminReservationsController::approveAction');
 $router->post('/admin/reservations/rejectAction', 'AdminReservationsController::rejectAction');
 
+// Quick AJAX routes for approve/reject
+$router->post('/admin/reservations/quickApprove', 'AdminReservationsController::quickApprove');
+$router->post('/admin/reservations/quickReject', 'AdminReservationsController::quickReject');
+
+// Bulk action routes
+$router->post('/admin/reservations/bulkApprove', 'AdminReservationsController::bulkApprove');
+$router->post('/admin/reservations/bulkReject', 'AdminReservationsController::bulkReject');
+
 /* -------------------- Admin Reports -------------------- */
 $router->get('/admin/reports', 'ReportsController::index');
 $router->post('/admin/reports/updatePayment', 'ReportsController::updatePayment');

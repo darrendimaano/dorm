@@ -698,11 +698,6 @@ function showQuickMessage(message, type) {
     showNotification(message, type);
 }
 
-// Override browser confirm with custom modal for better UX
-window.customConfirm = async function(message, title = 'Confirm Action', iconClass = 'fa-question-circle') {
-    return await showConfirmation(message, title, iconClass);
-};
-
 // Search functionality for reservations history
 function filterReservations() {
     const searchInput = document.getElementById('historySearchInput');
@@ -823,7 +818,7 @@ async function quickApprove(id, studentName, button) {
 }
 
 function quickReject(id, studentName, button) {
-    if (!confirm(`Quick reject reservation for ${studentName}?`)) return;
+    if (!(await showConfirmation(`Quick reject reservation for ${studentName}?`)) return;
     
     // Set loading state
     const originalContent = button.innerHTML;
@@ -872,7 +867,7 @@ function bulkApprove() {
         return;
     }
     
-    if (!confirm(`Approve ${selected.length} selected reservations?`)) return;
+    if (!(await showConfirmation(`Approve ${selected.length} selected reservations?`)) return;
     
     processBulkAction(selected, 'approve');
 }
@@ -884,7 +879,7 @@ function bulkReject() {
         return;
     }
     
-    if (!confirm(`Reject ${selected.length} selected reservations?`)) return;
+    if (!(await showConfirmation(`Reject ${selected.length} selected reservations?`)) return;
     
     processBulkAction(selected, 'reject');
 }
@@ -1199,7 +1194,7 @@ function hideMessage(messageElement) {
 
 // Fast AJAX approval/rejection functions
 function quickApprove(id, studentName, button) {
-    if (!confirm(`Quick approve reservation for ${studentName}?`)) return;
+    if (!(await showConfirmation(`Quick approve reservation for ${studentName}?`)) return;
     
     // Set loading state
     const originalContent = button.innerHTML;
@@ -1241,7 +1236,7 @@ function quickApprove(id, studentName, button) {
 }
 
 function quickReject(id, studentName, button) {
-    if (!confirm(`Quick reject reservation for ${studentName}?`)) return;
+    if (!(await showConfirmation(`Quick reject reservation for ${studentName}?`)) return;
     
     // Set loading state
     const originalContent = button.innerHTML;
@@ -1290,7 +1285,7 @@ function bulkApprove() {
         return;
     }
     
-    if (!confirm(`Approve ${selected.length} selected reservations?`)) return;
+    if (!(await showConfirmation(`Approve ${selected.length} selected reservations?`)) return;
     
     processBulkAction(selected, 'approve');
 }
@@ -1302,7 +1297,7 @@ function bulkReject() {
         return;
     }
     
-    if (!confirm(`Reject ${selected.length} selected reservations?`)) return;
+    if (!(await showConfirmation(`Reject ${selected.length} selected reservations?`)) return;
     
     processBulkAction(selected, 'reject');
 }

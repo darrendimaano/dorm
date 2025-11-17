@@ -142,15 +142,31 @@
         <!-- Payment History Table -->
         <div class="bg-white rounded-xl shadow-lg border border-[#E5D3B3] overflow-hidden">
             <div class="px-6 py-4" style="background: linear-gradient(135deg, #C19A6B 0%, #B07A4B 100%);">
-                <h2 class="text-xl font-bold text-white flex items-center gap-2">
-                    <i class="fa-solid fa-history"></i>
-                    Payment Records
-                </h2>
+                <div class="flex items-center justify-between">
+                    <h2 class="text-xl font-bold text-white flex items-center gap-2">
+                        <i class="fa-solid fa-history"></i>
+                        Payment Records
+                    </h2>
+                    <div class="flex items-center gap-3">
+                        <div class="relative">
+                            <input type="text" 
+                                   id="searchInput" 
+                                   placeholder="Search tenant, room, or amount..." 
+                                   class="px-4 py-2 pl-10 pr-4 rounded-lg border border-[#E5D3B3] focus:border-white focus:ring-2 focus:ring-white focus:ring-opacity-50 text-[#5C4033] w-64"
+                                   onkeyup="filterPayments()">
+                            <i class="fa-solid fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-[#5C4033] opacity-50"></i>
+                        </div>
+                        <button onclick="clearSearch()" 
+                                class="px-3 py-2 bg-white bg-opacity-20 text-white rounded-lg hover:bg-opacity-30 transition-all duration-200 text-sm">
+                            <i class="fa-solid fa-times"></i>
+                        </button>
+                    </div>
+                </div>
             </div>
             
             <?php if(!empty($paymentHistory)): ?>
             <div class="overflow-x-auto">
-                <table class="w-full">
+                <table class="w-full" id="paymentTable">
                     <thead style="background: #FFF5E1; color: #5C4033;" class="border-b border-[#E5D3B3]">
                         <tr>
                             <th class="py-4 px-4 text-left font-semibold">Date</th>
@@ -161,9 +177,9 @@
                             <th class="py-4 px-4 text-left font-semibold no-print">Actions</th>
                         </tr>
                     </thead>
-                    <tbody class="bg-[#FFF5E1]">
+                    <tbody class="bg-[#FFF5E1]" id="paymentTableBody">
                         <?php foreach($paymentHistory as $payment): ?>
-                        <tr class="border-b border-[#E5D3B3] hover:bg-[#F5F0E8] transition-all duration-200">
+                        <tr class="payment-row border-b border-[#E5D3B3] hover:bg-[#F5F0E8] transition-all duration-200">
                             <td class="py-4 px-4">
                                 <div>
                                     <p class="font-semibold text-[#5C4033]"><?= date('M j, Y', strtotime($payment['payment_date'])) ?></p>
@@ -172,7 +188,7 @@
                             </td>
                             <td class="py-4 px-4">
                                 <div>
-                                    <p class="font-semibold text-[#5C4033]"><?= htmlspecialchars($payment['fname'] . ' ' . $payment['lname']) ?></p>
+                                    <p class="font-semibold text-[#5C4033] tenant-name"><?= htmlspecialchars($payment['fname'] . ' ' . $payment['lname']) ?></p>
                                     <p class="text-sm text-[#5C4033] opacity-75"><?= htmlspecialchars($payment['email']) ?></p>
                                 </div>
                             </td>
@@ -180,16 +196,16 @@
                                 <div class="flex items-center gap-2">
                                     <i class="fa-solid fa-door-open text-[#C19A6B]"></i>
                                     <div>
-                                        <p class="font-semibold text-[#5C4033]">Room #<?= htmlspecialchars($payment['room_number']) ?></p>
+                                        <p class="font-semibold text-[#5C4033] room-number">Room #<?= htmlspecialchars($payment['room_number']) ?></p>
                                         <p class="text-sm text-[#5C4033] opacity-75">Rate: ₱<?= number_format($payment['room_rate'], 2) ?></p>
                                     </div>
                                 </div>
                             </td>
                             <td class="py-4 px-4">
-                                <div class="font-bold text-xl text-green-600">₱<?= number_format($payment['amount'], 2) ?></div>
+                                <div class="font-bold text-xl text-green-600 payment-amount">₱<?= number_format($payment['amount'], 2) ?></div>
                             </td>
                             <td class="py-4 px-4">
-                                <span class="px-3 py-1 rounded-full text-sm font-semibold bg-[#E5D3B3] text-[#5C4033]">
+                                <span class="px-3 py-1 rounded-full text-sm font-semibold bg-[#E5D3B3] text-[#5C4033] payment-method">
                                     <?= ucfirst(str_replace('_', ' ', $payment['payment_method'])) ?>
                                 </span>
                             </td>
@@ -208,6 +224,13 @@
                         <?php endforeach; ?>
                     </tbody>
                 </table>
+                
+                <!-- No Results Found Message -->
+                <div id="noResults" class="hidden p-8 text-center text-[#5C4033] opacity-60">
+                    <i class="fa-solid fa-search text-4xl mb-3"></i>
+                    <h3 class="text-lg font-semibold mb-2">No matching payments found</h3>
+                    <p class="text-sm">Try adjusting your search terms</p>
+                </div>
             </div>
             <?php else: ?>
                 <div class="p-12 text-center text-[#5C4033] opacity-60">
@@ -249,6 +272,78 @@ function showNotes(notes) {
 function closeNotes() {
     document.getElementById('notesModal').classList.add('hidden');
 }
+
+// Search functionality
+function filterPayments() {
+    const searchInput = document.getElementById('searchInput');
+    const filter = searchInput.value.toLowerCase();
+    const tableBody = document.getElementById('paymentTableBody');
+    const rows = tableBody.getElementsByClassName('payment-row');
+    const noResults = document.getElementById('noResults');
+    let visibleRows = 0;
+    
+    for (let i = 0; i < rows.length; i++) {
+        const row = rows[i];
+        const tenantName = row.querySelector('.tenant-name').textContent.toLowerCase();
+        const roomNumber = row.querySelector('.room-number').textContent.toLowerCase();
+        const paymentAmount = row.querySelector('.payment-amount').textContent.toLowerCase();
+        const paymentMethod = row.querySelector('.payment-method').textContent.toLowerCase();
+        
+        // Check if any of the searchable fields contain the filter text
+        if (tenantName.includes(filter) || 
+            roomNumber.includes(filter) || 
+            paymentAmount.includes(filter) || 
+            paymentMethod.includes(filter)) {
+            row.style.display = '';
+            visibleRows++;
+        } else {
+            row.style.display = 'none';
+        }
+    }
+    
+    // Show/hide no results message
+    if (visibleRows === 0 && filter !== '') {
+        noResults.classList.remove('hidden');
+    } else {
+        noResults.classList.add('hidden');
+    }
+    
+    // Update results count (optional)
+    updateResultsCount(visibleRows, rows.length);
+}
+
+function clearSearch() {
+    const searchInput = document.getElementById('searchInput');
+    searchInput.value = '';
+    filterPayments(); // This will show all rows again
+    searchInput.focus();
+}
+
+function updateResultsCount(visible, total) {
+    // You can add a results counter here if needed
+    // For example, display "Showing X of Y results" somewhere in the UI
+}
+
+// Add real-time search as user types
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('searchInput');
+    if (searchInput) {
+        // Add event listener for Enter key
+        searchInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                filterPayments();
+            }
+        });
+        
+        // Optional: Add clear button functionality when pressing Escape
+        searchInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                clearSearch();
+            }
+        });
+    }
+});
 </script>
 
 </body>

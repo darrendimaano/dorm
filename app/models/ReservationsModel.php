@@ -14,13 +14,21 @@ class ReservationsModel extends Model {
     }
 
     public function getPendingReservations() {
-        $stmt = $this->db->query("SELECT r.*, s.fname, s.lname, s.email, ro.room_number, ro.beds, ro.available, ro.payment 
-                                 FROM reservations r 
-                                 JOIN students s ON r.user_id = s.id 
-                                 JOIN rooms ro ON r.room_id = ro.id 
-                                 WHERE r.status = 'pending' 
-                                 ORDER BY r.id DESC");
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        try {
+            if (!$this->db) {
+                throw new Exception('Database connection not available');
+            }
+            $stmt = $this->db->query("SELECT r.*, s.fname, s.lname, s.email, ro.room_number, ro.beds, ro.available, ro.payment 
+                                     FROM reservations r 
+                                     JOIN students s ON r.user_id = s.id 
+                                     JOIN rooms ro ON r.room_id = ro.id 
+                                     WHERE r.status = 'pending' 
+                                     ORDER BY r.id DESC");
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (Exception $e) {
+            error_log('Error getting pending reservations: ' . $e->getMessage());
+            return [];
+        }
     }
 
     public function getAllReservations() {
@@ -37,18 +45,38 @@ class ReservationsModel extends Model {
     }
 
     public function updateStatus($id, $status) {
-        $stmt = $this->db->prepare("UPDATE reservations SET status = ? WHERE id = ?");
-        return $stmt->execute([$status, $id]);
+        try {
+            if (!$this->db) {
+                throw new Exception('Database connection not available');
+            }
+            $stmt = $this->db->prepare("UPDATE reservations SET status = ? WHERE id = ?");
+            $result = $stmt->execute([$status, $id]);
+            if (!$result) {
+                error_log('Failed to update reservation status: ' . print_r($stmt->errorInfo(), true));
+            }
+            return $result;
+        } catch (Exception $e) {
+            error_log('Error updating reservation status: ' . $e->getMessage());
+            return false;
+        }
     }
 
     public function getReservationById($id) {
-        $stmt = $this->db->prepare("SELECT r.*, s.fname, s.lname, ro.room_number, ro.available 
-                                   FROM reservations r 
-                                   JOIN students s ON r.user_id = s.id 
-                                   JOIN rooms ro ON r.room_id = ro.id 
-                                   WHERE r.id = ?");
-        $stmt->execute([$id]);
-        return $stmt->fetch(PDO::FETCH_ASSOC);
+        try {
+            if (!$this->db) {
+                throw new Exception('Database connection not available');
+            }
+            $stmt = $this->db->prepare("SELECT r.*, s.fname, s.lname, ro.room_number, ro.available 
+                                       FROM reservations r 
+                                       JOIN students s ON r.user_id = s.id 
+                                       JOIN rooms ro ON r.room_id = ro.id 
+                                       WHERE r.id = ?");
+            $stmt->execute([$id]);
+            return $stmt->fetch(PDO::FETCH_ASSOC);
+        } catch (Exception $e) {
+            error_log('Error getting reservation by ID: ' . $e->getMessage());
+            return false;
+        }
     }
 
     public function insert($data) {
