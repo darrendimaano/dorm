@@ -47,7 +47,7 @@
             $current_url = $_SERVER['REQUEST_URI'] ?? '';
             $form_action = site_url(trim($current_url, '/'));
             ?>
-            <form method="POST" action="<?= $form_action ?>" enctype="multipart/form-data" class="max-w-2xl mx-auto">
+            <form method="POST" action="<?= $form_action ?>" enctype="multipart/form-data" class="w-full px-4">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <!-- Room Number -->
                     <div class="md:col-span-1">

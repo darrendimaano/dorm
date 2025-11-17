@@ -25,7 +25,7 @@ if(session_status() === PHP_SESSION_NONE) session_start();
 <body class="font-sans">
 
 <div class="min-h-screen p-6">
-  <div class="max-w-2xl mx-auto">
+  <div class="w-full px-4">
     
     <!-- Header Actions -->
     <div class="flex items-center justify-between mb-6 no-print">

@@ -67,6 +67,55 @@ if(session_status() === PHP_SESSION_NONE) session_start();
       margin-left: 0 !important;
     }
   }
+  
+  /* Professional Modern Enhancements */
+  .card-modern {
+    background: rgba(255, 245, 225, 0.95);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(193, 154, 107, 0.2);
+    transition: all 0.3s ease;
+  }
+  .card-modern:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(193, 154, 107, 0.15);
+    border-color: #C19A6B;
+  }
+  
+  /* Enhanced grid for full-width utilization */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+  }
+  
+  @media (min-width: 1024px) {
+    .stats-grid {
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    }
+  }
+  
+  @media (min-width: 1536px) {
+    .stats-grid {
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    }
+  }
+  
+  /* Smooth scrollbars */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 3px;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #C19A6B;
+    border-radius: 3px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #B07A4B;
+  }
 </style>
 </head>
 <body class="bg-white font-sans flex">
@@ -155,8 +204,8 @@ if(session_status() === PHP_SESSION_NONE) session_start();
     <?php endif; ?>
 
     <!-- Summary Statistics -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-4 mb-6">
-        <div class="bg-[#FFF5E1] rounded-lg p-4 shadow-lg border border-[#E5D3B3] hover:shadow-xl transition-shadow">
+    <div class="stats-grid mb-6">
+        <div class="card-modern rounded-lg p-4 shadow-lg border border-[#E5D3B3] hover:shadow-xl transition-shadow">
             <div class="flex items-center justify-between">
                 <div>
                     <p class="text-[#5C4033] text-xs opacity-75">Active Tenants</p>

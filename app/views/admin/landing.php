@@ -52,7 +52,7 @@
     </div>
   </div>
 
-  <div class="max-w-6xl mx-auto mt-6 px-4">
+  <div class="w-full mt-4 px-3">
     <!-- Success/Error Messages -->
     <?php if (!empty($success)): ?>
         <div style="background: #e6f7e6; border-color: #C19A6B;" class="border text-green-700 px-4 py-3 rounded mb-6">
@@ -86,16 +86,16 @@
     </div>
 
     <!-- Stats Cards -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-4 mb-6">
       <!-- Pending Reservations -->
-      <div style="background: #FFF5E1;" class="rounded-lg shadow-lg p-6 border hover:shadow-xl transition" style="border-color: #C19A6B;">
+      <div style="background: #FFF5E1;" class="rounded-lg shadow-lg p-4 border hover:shadow-xl transition" style="border-color: #C19A6B;">
         <div class="flex items-center justify-between">
           <div>
-            <p class="text-sm font-medium text-[#5C4033] uppercase tracking-wider opacity-70">Pending Reservations</p>
-            <p class="text-3xl font-bold text-[#5C4033]"><?= count($pendingReservations ?? []) ?></p>
+            <p class="text-xs font-medium text-[#5C4033] uppercase tracking-wider opacity-70">Pending Reservations</p>
+            <p class="text-xl font-bold text-[#5C4033]"><?= count($pendingReservations ?? []) ?></p>
           </div>
-          <div class="bg-yellow-600 rounded-md p-3">
-            <i class="fas fa-clock text-white text-xl"></i>
+          <div class="bg-yellow-600 rounded-md p-2">
+            <i class="fas fa-clock text-white text-lg"></i>
           </div>
         </div>
       </div>

@@ -290,44 +290,44 @@ foreach ($roomsAvailability as $roomNumber => $available) {
         </div>
         
         <!-- Quick Payment Actions -->
-        <div class="bg-white p-6 rounded-2xl shadow border border-[#C19A6B] card">
-            <h2 class="text-lg font-semibold text-[#5C4033] mb-4 flex items-center gap-2">
+        <div class="bg-white p-4 rounded-xl shadow border border-[#C19A6B] card">
+            <h2 class="text-sm font-semibold text-[#5C4033] mb-3 flex items-center gap-2">
                 <i class="fa-solid fa-peso-sign text-[#C19A6B]"></i>
                 Payment Summary
             </h2>
             
-            <div class="space-y-4">
-                <div class="flex items-center justify-between p-3 bg-[#FFF5E1] rounded-lg border border-[#E5D3B3]">
-                    <div class="flex items-center gap-3">
-                        <div class="w-3 h-3 bg-green-500 rounded-full"></div>
-                        <span class="text-sm font-medium text-[#5C4033]">Paid This Month</span>
+            <div class="space-y-2">
+                <div class="flex items-center justify-between p-2 bg-[#FFF5E1] rounded-lg border border-[#E5D3B3]">
+                    <div class="flex items-center gap-2">
+                        <div class="w-2 h-2 bg-green-500 rounded-full"></div>
+                        <span class="text-xs font-medium text-[#5C4033]">Paid This Month</span>
                     </div>
-                    <span class="text-lg font-bold text-green-600">₱0.00</span>
+                    <span class="text-sm font-bold text-green-600">₱0.00</span>
                 </div>
                 
-                <div class="flex items-center justify-between p-3 bg-[#FFF5E1] rounded-lg border border-[#E5D3B3]">
-                    <div class="flex items-center gap-3">
-                        <div class="w-3 h-3 bg-yellow-500 rounded-full"></div>
-                        <span class="text-sm font-medium text-[#5C4033]">Due Soon</span>
+                <div class="flex items-center justify-between p-2 bg-[#FFF5E1] rounded-lg border border-[#E5D3B3]">
+                    <div class="flex items-center gap-2">
+                        <div class="w-2 h-2 bg-yellow-500 rounded-full"></div>
+                        <span class="text-xs font-medium text-[#5C4033]">Due Soon</span>
                     </div>
-                    <span class="text-lg font-bold text-yellow-600">₱0.00</span>
+                    <span class="text-sm font-bold text-yellow-600">₱0.00</span>
                 </div>
                 
-                <div class="flex items-center justify-between p-3 bg-[#FFF5E1] rounded-lg border border-[#E5D3B3]">
-                    <div class="flex items-center gap-3">
-                        <div class="w-3 h-3 bg-red-500 rounded-full"></div>
-                        <span class="text-sm font-medium text-[#5C4033]">Overdue</span>
+                <div class="flex items-center justify-between p-2 bg-[#FFF5E1] rounded-lg border border-[#E5D3B3]">
+                    <div class="flex items-center gap-2">
+                        <div class="w-2 h-2 bg-red-500 rounded-full"></div>
+                        <span class="text-xs font-medium text-[#5C4033]">Overdue</span>
                     </div>
-                    <span class="text-lg font-bold text-red-600">₱0.00</span>
+                    <span class="text-sm font-bold text-red-600">₱0.00</span>
                 </div>
             </div>
             
-            <div class="mt-6 flex gap-2">
-                <a href="<?= site_url('admin/reports') ?>" class="flex-1 px-4 py-2 bg-[#C19A6B] text-white rounded-lg hover:bg-[#A67C52] transition-all duration-200 text-sm font-medium text-center">
+            <div class="mt-3 flex gap-1">
+                <a href="<?= site_url('admin/reports') ?>" class="flex-1 px-2 py-1 bg-[#C19A6B] text-white rounded-lg hover:bg-[#A67C52] transition-all duration-200 text-xs font-medium text-center">
                     <i class="fa-solid fa-chart-bar mr-1"></i>
-                    View Reports
+                    Reports
                 </a>
-                <button onclick="window.location.reload()" class="px-4 py-2 border border-[#C19A6B] text-[#5C4033] rounded-lg hover:bg-[#C19A6B] hover:text-white transition-all duration-200 text-sm font-medium">
+                <button onclick="window.location.reload()" class="px-2 py-1 border border-[#C19A6B] text-[#5C4033] rounded-lg hover:bg-[#C19A6B] hover:text-white transition-all duration-200 text-xs font-medium">
                     <i class="fa-solid fa-refresh"></i>
                 </button>
             </div>
@@ -335,26 +335,26 @@ foreach ($roomsAvailability as $roomNumber => $available) {
     </div>
 
     <!-- Rooms Table -->
-    <div class="bg-white p-6 rounded-2xl shadow border border-[#C19A6B]">
-        <h2 class="text-lg font-semibold mb-4 text-[#5C4033]">Rooms Details</h2>
+    <div class="bg-white p-4 rounded-xl shadow border border-[#C19A6B]">
+        <h2 class="text-sm font-semibold mb-3 text-[#5C4033]">Rooms Details</h2>
         <div class="overflow-x-auto">
             <table class="w-full text-center border-collapse">
                 <thead>
-                    <tr class="bg-[#C19A6B] text-white text-sm uppercase tracking-wide">
-                        <th class="py-3 px-4">Room #</th>
-                        <th class="py-3 px-4">Available Beds</th>
+                    <tr class="bg-[#C19A6B] text-white text-xs uppercase tracking-wide">
+                        <th class="py-2 px-3">Room #</th>
+                        <th class="py-2 px-3">Available Beds</th>
                     </tr>
                 </thead>
-                <tbody class="text-[#5C4033] text-sm">
+                <tbody class="text-[#5C4033] text-xs">
                     <?php foreach($rooms as $r): ?>
                     <tr class="hover:bg-[#FFEFD5] transition">
-                        <td class="py-3 px-4"><?= $r['room_number'] ?></td>
-                        <td class="py-3 px-4"><?= $r['available'] ?></td>
+                        <td class="py-2 px-3"><?= $r['room_number'] ?></td>
+                        <td class="py-2 px-3"><?= $r['available'] ?></td>
                     </tr>
                     <?php endforeach; ?>
                     <?php if(empty($rooms)): ?>
                     <tr>
-                        <td colspan="2" class="py-3 px-4 text-center text-[#5C4033]">No rooms available</td>
+                        <td colspan="2" class="py-2 px-3 text-center text-[#5C4033]">No rooms available</td>
                     </tr>
                     <?php endif; ?>
                 </tbody>

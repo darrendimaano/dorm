@@ -27,7 +27,7 @@
 
         <!-- Create Form -->
         <div class="bg-white rounded-lg shadow-lg p-6">
-            <form method="POST" action="<?= site_url('rooms/create'); ?>" class="max-w-2xl mx-auto">
+            <form method="POST" action="<?= site_url('rooms/create'); ?>" class="w-full px-4">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <!-- Room Number -->
                     <div class="md:col-span-1">

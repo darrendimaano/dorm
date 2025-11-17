@@ -116,7 +116,7 @@ if(session_status() === PHP_SESSION_NONE) session_start();
     </div>
   </div>
 
-  <div class="w-full px-4 py-6">
+  <div class="w-full px-3 py-4">
     
     <!-- Success / Error Messages -->
     <?php if(!empty($success)): ?>
