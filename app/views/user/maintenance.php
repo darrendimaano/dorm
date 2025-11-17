@@ -105,7 +105,7 @@ if(session_status() === PHP_SESSION_NONE) session_start();
       <i class="fa-solid fa-phone mr-2"></i>
       <span class="sidebar-text">Contact: 09517394938</span>
     </div>
-    <a href="<?= site_url('auth/logout') ?>" class="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-red-400 hover:text-white transition">
+    <a href="#" onclick="confirmLogout()" class="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-red-400 hover:text-white transition">
       <i class="fa-solid fa-right-from-bracket"></i> <span>Logout</span>
     </a>
   </nav>
@@ -490,6 +490,59 @@ function confirmMaintenanceSubmit() {
 function viewRequest(requestId) {
     // You can implement a modal or redirect to a detail page
     alert('Request details modal can be implemented here for request ID: ' + requestId);
+}
+
+// Custom logout confirmation modal
+function confirmLogout() {
+    const modal = document.createElement('div');
+    modal.id = 'logoutModal';
+    modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
+    
+    modal.innerHTML = `
+        <div class="bg-white rounded-xl shadow-2xl max-w-md mx-4 p-6 border-2 border-[#C19A6B]">
+            <div class="text-center">
+                <div class="bg-red-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i class="fa-solid fa-sign-out-alt text-red-500 text-2xl"></i>
+                </div>
+                <h3 class="text-xl font-bold text-[#5C4033] mb-2">Confirm Logout</h3>
+                <p class="text-[#5C4033] opacity-75 mb-6">Are you sure you want to logout?</p>
+                <div class="flex gap-3 justify-center">
+                    <button onclick="closeLogoutModal()" 
+                            class="px-6 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition font-semibold">
+                        Cancel
+                    </button>
+                    <button onclick="proceedLogout()" 
+                            class="px-6 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition font-semibold">
+                        <i class="fa-solid fa-sign-out-alt mr-2"></i>Logout
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    modal.addEventListener('click', function(e) {
+        if (e.target === modal) closeLogoutModal();
+    });
+    document.addEventListener('keydown', handleEscKey);
+}
+
+function closeLogoutModal() {
+    const modal = document.getElementById('logoutModal');
+    if (modal) {
+        modal.remove();
+        document.removeEventListener('keydown', handleEscKey);
+    }
+}
+
+function proceedLogout() {
+    window.location.href = '<?= site_url('auth/logout') ?>';
+}
+
+function handleEscKey(e) {
+    if (e.key === 'Escape') {
+        closeLogoutModal();
+    }
 }
 </script>
 
