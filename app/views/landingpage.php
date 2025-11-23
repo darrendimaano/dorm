@@ -21,24 +21,15 @@ if (session_status() === PHP_SESSION_NONE) session_start();
       <i class="fas fa-home mr-2"></i>Dormitory Rooms
     </div>
     <div class="flex items-center space-x-3">
-      <?php if(!isset($_SESSION['admin'])): ?>
-        <div class="hidden md:block text-sm text-[#FFF5E1] mr-4">
-          <i class="fas fa-info-circle mr-1"></i>New here? Create an account or sign in
-        </div>
-        <a href="<?= site_url('auth/login') ?>" class="flex items-center hover:bg-[#B07A4B] px-4 py-2 rounded transition duration-300">
-          <i class="fas fa-sign-in-alt mr-2"></i>Login
-        </a>
-        <a href="<?= site_url('auth/register') ?>" class="flex items-center bg-[#D2B48C] hover:bg-[#B07A4B] text-[#5C4033] px-4 py-2 rounded transition duration-300 font-semibold">
-          <i class="fas fa-user-plus mr-2"></i>Register
-        </a>
-      <?php else: ?>
-        <span class="px-4 py-2 rounded bg-[#D2B48C] font-semibold text-[#5C4033] flex items-center">
-          <i class="fas fa-user-shield mr-2"></i>Welcome, Admin
-        </span>
-        <a href="#" onclick="confirmLogout()" class="bg-red-500 hover:bg-red-600 px-4 py-2 rounded transition duration-300 flex items-center">
-          <i class="fas fa-sign-out-alt mr-2"></i>Logout
-        </a>
-      <?php endif; ?>
+      <div class="hidden md:block text-sm text-[#FFF5E1] mr-4">
+        <i class="fas fa-info-circle mr-1"></i>New here? Create an account or sign in
+      </div>
+      <a href="<?= site_url('auth/login') ?>" class="flex items-center hover:bg-[#B07A4B] px-4 py-2 rounded transition duration-300">
+        <i class="fas fa-sign-in-alt mr-2"></i>Login
+      </a>
+      <a href="<?= site_url('auth/register') ?>" class="flex items-center bg-[#D2B48C] hover:bg-[#B07A4B] text-[#5C4033] px-4 py-2 rounded transition duration-300 font-semibold">
+        <i class="fas fa-user-plus mr-2"></i>Register
+      </a>
     </div>
   </div>
 </nav>
@@ -63,17 +54,6 @@ if (session_status() === PHP_SESSION_NONE) session_start();
           <?= $room['available'] > 0 ? 'Available' : 'Full' ?>
         </span>
 
-        <!-- Admin Edit/Delete -->
-        <?php if(isset($_SESSION['admin'])): ?>
-          <div class="mt-4 flex justify-between">
-            <a href="<?= site_url('rooms/update/'.$room['id']) ?>" class="bg-[#C19A6B] hover:bg-[#B07A4B] text-white px-3 py-1 rounded-lg shadow flex items-center gap-1">
-              <i class="fa-solid fa-pen-to-square"></i> Edit
-            </a>
-            <a href="<?= site_url('rooms/delete/'.$room['id']) ?>" class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded-lg shadow flex items-center gap-1">
-              <i class="fa-solid fa-trash"></i> Delete
-            </a>
-          </div>
-        <?php endif; ?>
       </div>
     <?php endforeach; ?>
   <?php else: ?>
@@ -82,83 +62,27 @@ if (session_status() === PHP_SESSION_NONE) session_start();
 </main>
 
 <script>
-// Only for non-logged-in users
-<?php if(!isset($_SESSION['admin'])): ?>
-  document.querySelectorAll('.availabilityBadge').forEach(badge => {
-    badge.addEventListener('click', () => {
-      const card = badge.parentElement;
+document.querySelectorAll('.availabilityBadge').forEach(badge => {
+  badge.addEventListener('click', () => {
+    const card = badge.parentElement;
 
-      // Remove existing popup if any
-      const existing = card.querySelector('.popupMsg');
-      if(existing) existing.remove();
+    // Remove existing popup if any
+    const existing = card.querySelector('.popupMsg');
+    if(existing) existing.remove();
 
-      // Create popup message
-      const msg = document.createElement('div');
-      msg.className = 'popupMsg absolute -top-10 left-1/2 transform -translate-x-1/2 bg-[#FFEFD5] border-l-4 border-[#D2B48C] text-[#5C4033] px-4 py-2 rounded shadow-md text-center';
-      msg.textContent = 'You must login or register to access this feature.';
+    // Create popup message
+    const msg = document.createElement('div');
+    msg.className = 'popupMsg absolute -top-10 left-1/2 transform -translate-x-1/2 bg-[#FFEFD5] border-l-4 border-[#D2B48C] text-[#5C4033] px-4 py-2 rounded shadow-md text-center';
+    msg.textContent = 'You must login or register to access this feature.';
 
-      card.appendChild(msg);
+    card.appendChild(msg);
 
-      // Remove after 3 seconds
-      setTimeout(() => {
-        msg.remove();
-      }, 3000);
-    });
+    // Remove after 3 seconds
+    setTimeout(() => {
+      msg.remove();
+    }, 3000);
   });
-<?php endif; ?>
-
-// Custom logout confirmation modal
-function confirmLogout() {
-    const modal = document.createElement('div');
-    modal.id = 'logoutModal';
-    modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
-    
-    modal.innerHTML = `
-        <div class="bg-white rounded-xl shadow-2xl max-w-md mx-4 p-6 border-2 border-[#C19A6B]">
-            <div class="text-center">
-                <div class="bg-red-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <i class="fa-solid fa-sign-out-alt text-red-500 text-2xl"></i>
-                </div>
-                <h3 class="text-xl font-bold text-[#5C4033] mb-2">Confirm Logout</h3>
-                <p class="text-[#5C4033] opacity-75 mb-6">Are you sure you want to logout?</p>
-                <div class="flex gap-3 justify-center">
-                    <button onclick="closeLogoutModal()" 
-                            class="px-6 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition font-semibold">
-                        Cancel
-                    </button>
-                    <button onclick="proceedLogout()" 
-                            class="px-6 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition font-semibold">
-                        <i class="fa-solid fa-sign-out-alt mr-2"></i>Logout
-                    </button>
-                </div>
-            </div>
-        </div>
-    `;
-    
-    document.body.appendChild(modal);
-    modal.addEventListener('click', function(e) {
-        if (e.target === modal) closeLogoutModal();
-    });
-    document.addEventListener('keydown', handleEscKey);
-}
-
-function closeLogoutModal() {
-    const modal = document.getElementById('logoutModal');
-    if (modal) {
-        modal.remove();
-        document.removeEventListener('keydown', handleEscKey);
-    }
-}
-
-function proceedLogout() {
-    window.location.href = '<?= site_url('auth/logout') ?>';
-}
-
-function handleEscKey(e) {
-    if (e.key === 'Escape') {
-        closeLogoutModal();
-    }
-}
+});
 </script>
 
 </body>

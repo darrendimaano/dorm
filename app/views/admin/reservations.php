@@ -1,10 +1,11 @@
 <?php
 defined('PREVENT_DIRECT_ACCESS') OR exit('No direct script access allowed');
 if(session_status() === PHP_SESSION_NONE) session_start();
+$darkModeEnabled = false;
 ?>
 
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="<?= $darkModeEnabled ? 'dark' : '' ?>">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -44,22 +45,22 @@ if (!window.navigator.onLine) {
 <style>
 /* Offline FontAwesome fallbacks using unicode symbols */
 .offline-icon { font-family: sans-serif; font-weight: bold; }
-.fa-check::before { content: '✓'; }
-.fa-times::before { content: '✗'; }
-.fa-spinner::before { content: '⟳'; animation: spin 1s linear infinite; }
-.fa-user::before { content: '👤'; }
-.fa-bed::before { content: '🛏️'; }
-.fa-envelope::before { content: '✉️'; }
-.fa-hashtag::before { content: '#'; }
-.fa-clock::before { content: '🕐'; }
-.fa-check-circle::before { content: '✅'; }
-.fa-times-circle::before { content: '❌'; }
-.fa-history::before { content: '📋'; }
-.fa-hourglass-empty::before { content: '⏳'; }
-.fa-search::before { content: '🔍'; }
-.fa-print::before { content: '🖨️'; }
-.fa-file-excel::before { content: '📊'; }
-.fa-file-csv::before { content: '📄'; }
+body.offline-mode .fa-check::before { content: '✓'; }
+body.offline-mode .fa-times::before { content: '✗'; }
+body.offline-mode .fa-spinner::before { content: '⟳'; animation: spin 1s linear infinite; }
+body.offline-mode .fa-user::before { content: '👤'; }
+body.offline-mode .fa-bed::before { content: '🛏️'; }
+body.offline-mode .fa-envelope::before { content: '✉️'; }
+body.offline-mode .fa-hashtag::before { content: '#'; }
+body.offline-mode .fa-clock::before { content: '🕐'; }
+body.offline-mode .fa-check-circle::before { content: '✅'; }
+body.offline-mode .fa-times-circle::before { content: '❌'; }
+body.offline-mode .fa-history::before { content: '📋'; }
+body.offline-mode .fa-hourglass-empty::before { content: '⏳'; }
+body.offline-mode .fa-search::before { content: '🔍'; }
+body.offline-mode .fa-print::before { content: '🖨️'; }
+body.offline-mode .fa-file-excel::before { content: '📊'; }
+body.offline-mode .fa-file-csv::before { content: '📄'; }
 @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 
 /* Ensure offline functionality */
@@ -152,7 +153,7 @@ if (window.navigator.onLine) {
   }
 </style>
 </head>
-<body class="bg-white font-sans flex">
+<body class="bg-white font-sans flex<?= $darkModeEnabled ? ' dark' : '' ?>">
 
 <!-- Offline Status Notification -->
 <div id="offlineNotice" class="fixed top-4 right-4 z-50 hidden">
@@ -197,58 +198,44 @@ if (window.navigator.onLine) {
 
 <script>
 // Simple offline detection and notification
-if (!navigator.onLine) {
-    document.addEventListener('DOMContentLoaded', function() {
-        const notice = document.getElementById('offlineNotice');
-        if (notice) {
-            notice.classList.remove('hidden');
-            // Auto-hide after 10 seconds
-            setTimeout(() => notice.style.display = 'none', 10000);
-        }
-    });
+function toggleOfflineMode(isOffline) {
+  if (!document.body) {
+    return;
+  }
+
+  const notice = document.getElementById('offlineNotice');
+
+  if (isOffline) {
+    document.body.classList.add('offline-mode');
+    if (notice) {
+      notice.classList.remove('hidden');
+      setTimeout(() => notice.style.display = 'none', 10000);
+    }
+  } else {
+    document.body.classList.remove('offline-mode');
+    if (notice) {
+      notice.style.display = 'none';
+    }
+  }
 }
 
+document.addEventListener('DOMContentLoaded', function() {
+  if (!navigator.onLine) {
+    toggleOfflineMode(true);
+  }
+});
+
 window.addEventListener('offline', function() {
-    const notice = document.getElementById('offlineNotice');
-    if (notice) notice.classList.remove('hidden');
+  toggleOfflineMode(true);
 });
 
 window.addEventListener('online', function() {
-    const notice = document.getElementById('offlineNotice');
-    if (notice) notice.style.display = 'none';
+  toggleOfflineMode(false);
 });
 </script>
 
 <!-- Sidebar -->
-<div id="sidebar" class="text-[#5C4033] w-64 min-h-screen p-6 fixed left-0 top-0 z-50 shadow-lg">
-  <h2 class="text-2xl font-bold mb-8">🏨</h2>
-  <nav class="flex flex-col gap-4">
-    <a href="<?= site_url('dashboard') ?>" class="flex items-center gap-2 px-4 py-2 rounded hover:bg-[#C19A6B] transition">
-      <i class="fa-solid fa-chart-line"></i> <span>Dashboard</span>
-    </a>
-    <a href="<?=site_url('users')?>" class="flex items-center gap-2 px-4 py-2 rounded hover:bg-[#C19A6B] transition">
-      <i class="fa-solid fa-user"></i> <span>Users</span>
-    </a>
-    <a href="<?=site_url('rooms')?>" class="flex items-center gap-2 px-4 py-2 rounded hover:bg-[#C19A6B] transition">
-      <i class="fa-solid fa-bed"></i> <span>Rooms</span>
-    </a>
-    <a href="<?=site_url('admin/reservations')?>" class="flex items-center gap-2 px-4 py-2 rounded bg-[#C19A6B] text-white font-semibold">
-      <i class="fa-solid fa-list-check"></i> <span>Reservations</span>
-    </a>
-    <a href="<?=site_url('admin/reports')?>" class="flex items-center gap-2 px-4 py-2 rounded hover:bg-[#C19A6B] transition">
-      <i class="fa-solid fa-file-chart-line"></i> <span>Tenant Reports</span>
-    </a>
-    <a href="<?=site_url('admin/messages')?>" class="flex items-center gap-2 px-4 py-2 rounded hover:bg-[#C19A6B] transition">
-      <i class="fa-solid fa-envelope"></i> <span>Messages</span>
-    </a>
-    <a href="<?=site_url('settings')?>" class="flex items-center gap-2 px-4 py-2 rounded hover:bg-[#C19A6B] transition">
-      <i class="fa-solid fa-cog"></i> <span>Settings</span>
-    </a>
-    <a href="<?=site_url('auth/logout')?>" class="flex items-center gap-2 px-4 py-2 rounded hover:bg-red-300 transition mt-6">
-      <i class="fa-solid fa-right-from-bracket"></i> <span>Logout</span>
-    </a>
-  </nav>
-</div>
+<?php include __DIR__ . '/../includes/sidebar.php'; ?>
 
 <!-- Main Content -->
 <div class="flex-1 ml-64 transition-all duration-300 content-area" id="mainContent">
@@ -260,7 +247,7 @@ window.addEventListener('online', function() {
       <i class="fa-solid fa-list-check text-[#C19A6B]"></i>
       Reservations Management
     </h1>
-    <div class="flex items-center gap-2 text-sm text-[#5C4033] opacity-75">
+    <div class="flex items-center gap-3 text-sm text-[#5C4033] opacity-75">
       <i class="fa-solid fa-clock"></i>
       <span id="currentTime"></span>
     </div>

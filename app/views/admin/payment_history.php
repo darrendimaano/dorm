@@ -1,5 +1,35 @@
+<?php
+defined('PREVENT_DIRECT_ACCESS') OR exit('No direct script access allowed');
+if (session_status() === PHP_SESSION_NONE) session_start();
+$darkModeEnabled = false;
+$selectedMonth = $selectedMonth ?? '';
+$selectedUser = $selectedUser ?? 0;
+$monthOptions = $monthOptions ?? [];
+$userOptions = $userOptions ?? [];
+$filtersActive = ($selectedMonth !== '' || !empty($selectedUser));
+$selectedUserLabel = '';
+if (!empty($selectedUser) && !empty($userOptions)) {
+    foreach ($userOptions as $option) {
+        if ((int) $option['id'] === (int) $selectedUser) {
+            $selectedUserLabel = trim($option['fname'] . ' ' . $option['lname']);
+            break;
+        }
+    }
+}
+$filterQueryParams = [];
+if ($selectedMonth !== '') {
+    $filterQueryParams['month'] = $selectedMonth;
+}
+if (!empty($selectedUser)) {
+    $filterQueryParams['user'] = (int) $selectedUser;
+}
+$filterQueryString = http_build_query($filterQueryParams);
+$downloadCsvUrl = site_url('admin/reports/payment-history/download-csv') . ($filterQueryString ? '?' . $filterQueryString : '');
+$downloadPdfUrl = site_url('admin/reports/payment-history/download-pdf') . ($filterQueryString ? '?' . $filterQueryString : '');
+?>
+
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="<?= $darkModeEnabled ? 'dark' : '' ?>">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -13,37 +43,12 @@
         }
     </style>
 </head>
-<body class="bg-[#FFF5E1] font-sans">
+<body class="bg-[#FFF5E1] font-sans<?= $darkModeEnabled ? ' dark' : '' ?>">
 
 <!-- Sidebar Navigation -->
 <div class="flex">
-    <!-- Sidebar -->
-<div class="text-[#5C4033] w-64 min-h-screen p-6 fixed left-0 top-0 z-50 shadow-lg" style="background: #D2B48C;">
-  <h2 class="text-2xl font-bold mb-8">🏨 Dormitory Admin</h2>
-  <nav class="flex flex-col gap-4">
-    <a href="<?= site_url('dashboard') ?>" class="flex items-center gap-2 px-4 py-2 rounded hover:bg-[#C19A6B] transition">
-      <i class="fa-solid fa-chart-line"></i> <span>Dashboard</span>
-    </a>
-    <a href="<?=site_url('users')?>" class="flex items-center gap-2 px-4 py-2 rounded hover:bg-[#C19A6B] transition">
-      <i class="fa-solid fa-user"></i> <span>Users</span>
-    </a>
-    <a href="<?=site_url('rooms')?>" class="flex items-center gap-2 px-4 py-2 rounded hover:bg-[#C19A6B] transition">
-      <i class="fa-solid fa-bed"></i> <span>Rooms</span>
-    </a>
-    <a href="<?=site_url('admin/reservations')?>" class="flex items-center gap-2 px-4 py-2 rounded hover:bg-[#C19A6B] transition">
-      <i class="fa-solid fa-list-check"></i> <span>Reservations</span>
-    </a>
-    <a href="<?=site_url('admin/reports')?>" class="flex items-center gap-2 px-4 py-2 rounded bg-[#C19A6B] text-white font-semibold">
-      <i class="fa-solid fa-file-chart-line"></i> <span>Tenant Reports</span>
-    </a>
-    <a href="<?=site_url('settings')?>" class="flex items-center gap-2 px-4 py-2 rounded hover:bg-[#C19A6B] transition">
-      <i class="fa-solid fa-cog"></i> <span>Settings</span>
-    </a>
-    <a href="#" onclick="confirmLogout()" class="flex items-center gap-2 px-4 py-2 rounded hover:bg-red-300 transition mt-6">
-      <i class="fa-solid fa-right-from-bracket"></i> <span>Logout</span>
-    </a>
-  </nav>
-</div>
+        <!-- Sidebar -->
+<?php include __DIR__ . '/../includes/sidebar.php'; ?>
 
     <!-- Main Content -->
     <div class="ml-64 flex-1 p-6">
@@ -76,7 +81,7 @@
         <?php endif; ?>
 
         <!-- Summary Statistics -->
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
             <div class="bg-white rounded-xl p-6 shadow-lg border border-[#E5D3B3]">
                 <div class="flex items-center justify-between">
                     <div>
@@ -96,17 +101,6 @@
                     <i class="fa-solid fa-peso-sign text-green-500 text-3xl"></i>
                 </div>
             </div>
-            
-            <div class="bg-white rounded-xl p-6 shadow-lg border border-[#E5D3B3]">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <p class="text-[#5C4033] text-sm opacity-75">Average Payment</p>
-                        <p class="text-2xl font-bold text-blue-600">₱<?= number_format($summary['average_payment'], 2) ?></p>
-                    </div>
-                    <i class="fa-solid fa-calculator text-blue-500 text-3xl"></i>
-                </div>
-            </div>
-            
             <div class="bg-white rounded-xl p-6 shadow-lg border border-[#E5D3B3]">
                 <div class="flex items-center justify-between">
                     <div>
@@ -120,13 +114,13 @@
 
         <!-- Action Buttons -->
         <div class="flex flex-wrap gap-4 mb-8 no-print">
-            <a href="<?= site_url('admin/reports/payment-history/download-csv') ?>" 
+            <a href="<?= $downloadCsvUrl ?>" 
                class="flex items-center gap-2 px-6 py-3 bg-[#C19A6B] text-white rounded-xl hover:bg-[#A67C52] transition-all duration-200 shadow-lg font-semibold">
                 <i class="fa-solid fa-download"></i>
                 <span>Download CSV</span>
             </a>
             
-            <a href="<?= site_url('admin/reports/payment-history/download-pdf') ?>" 
+            <a href="<?= $downloadPdfUrl ?>" 
                class="flex items-center gap-2 px-6 py-3 bg-red-600 text-white rounded-xl hover:bg-red-700 transition-all duration-200 shadow-lg font-semibold">
                 <i class="fa-solid fa-file-pdf"></i>
                 <span>Download PDF</span>
@@ -138,6 +132,154 @@
                 <span>Print Report</span>
             </button>
         </div>
+
+        <div class="bg-white rounded-xl border border-[#E5D3B3] shadow-lg mb-8 p-6 no-print">
+            <form method="GET" action="<?= site_url('admin/reports/payment-history') ?>" class="flex flex-wrap gap-4 items-end">
+                <div class="flex flex-col">
+                    <label for="month" class="text-sm font-semibold text-[#5C4033] mb-1">Filter by Month</label>
+                    <select id="month" name="month" class="px-4 py-2 border border-[#E5D3B3] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C19A6B] min-w-[180px]">
+                        <option value="">All Months</option>
+                        <?php foreach ($monthOptions as $option): ?>
+                            <?php 
+                                $optionValue = $option['month_year'];
+                                $displayDate = DateTime::createFromFormat('Y-m', $optionValue);
+                                $optionLabel = $displayDate ? $displayDate->format('F Y') : $optionValue;
+                            ?>
+                            <option value="<?= htmlspecialchars($optionValue) ?>" <?= $selectedMonth === $optionValue ? 'selected' : '' ?>>
+                                <?= htmlspecialchars($optionLabel) ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+
+                <div class="flex flex-col">
+                    <label for="user" class="text-sm font-semibold text-[#5C4033] mb-1">Filter by Tenant</label>
+                    <select id="user" name="user" class="px-4 py-2 border border-[#E5D3B3] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C19A6B] min-w-[220px]">
+                        <option value="">All Tenants</option>
+                        <?php foreach ($userOptions as $option): ?>
+                            <?php $fullName = trim($option['fname'] . ' ' . $option['lname']); ?>
+                            <option value="<?= (int) $option['id'] ?>" <?= (int) $selectedUser === (int) $option['id'] ? 'selected' : '' ?>>
+                                <?= htmlspecialchars($fullName) ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+
+                <button type="submit" class="px-6 py-2 bg-[#C19A6B] text-white rounded-lg hover:bg-[#A67C52] transition-all duration-200 font-semibold">
+                    Apply Filters
+                </button>
+
+                <?php if ($filtersActive): ?>
+                    <a href="<?= site_url('admin/reports/payment-history') ?>" class="px-6 py-2 border border-[#C19A6B] text-[#5C4033] rounded-lg hover:bg-[#F6EDE0] transition-all duration-200 font-semibold">
+                        Reset Filters
+                    </a>
+                <?php endif; ?>
+            </form>
+
+            <?php if ($filtersActive): ?>
+                <div class="mt-4 text-sm text-[#5C4033]">
+                    <span class="font-semibold">Active filters:</span>
+                    <span>
+                        <?= $selectedMonth ? htmlspecialchars(($displayDate = DateTime::createFromFormat('Y-m', $selectedMonth)) ? $displayDate->format('F Y') : $selectedMonth) : 'All Months' ?>
+                        •
+                        <?= $selectedUserLabel !== '' ? htmlspecialchars($selectedUserLabel) : 'All Tenants' ?>
+                    </span>
+                </div>
+            <?php endif; ?>
+        </div>
+
+        <?php if(!empty($pendingPayments)): ?>
+        <div class="bg-white rounded-xl shadow-lg border border-[#E5D3B3] overflow-hidden mb-8">
+            <div class="px-6 py-4 flex items-center justify-between" style="background: linear-gradient(135deg, #8B7355 0%, #B07A4B 100%);">
+                <h2 class="text-lg font-bold text-white flex items-center gap-2">
+                    <i class="fa-solid fa-hourglass-half"></i>
+                    Pending Payment Approvals
+                </h2>
+                <p class="text-sm text-white text-opacity-80">Click ✅ to approve or ❌ to reject.</p>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full">
+                    <thead style="background: #FFF5E1; color: #5C4033;" class="border-b border-[#E5D3B3]">
+                        <tr>
+                            <th class="py-3 px-4 text-left font-semibold">Submitted</th>
+                            <th class="py-3 px-4 text-left font-semibold">Tenant</th>
+                            <th class="py-3 px-4 text-left font-semibold">Room</th>
+                            <th class="py-3 px-4 text-left font-semibold">Amount</th>
+                            <th class="py-3 px-4 text-left font-semibold">Method</th>
+                            <th class="py-3 px-4 text-left font-semibold">Notes</th>
+                            <th class="py-3 px-4 text-left font-semibold">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-[#FFF5E1]">
+                        <?php foreach($pendingPayments as $payment): ?>
+                        <tr class="border-b border-[#E5D3B3] hover:bg-[#F5F0E8] transition-all duration-200">
+                            <td class="py-3 px-4">
+                                <p class="font-semibold text-[#5C4033]"><?= date('M j, Y', strtotime($payment['payment_date'])) ?></p>
+                                <p class="text-xs text-[#5C4033] opacity-70">Submitted <?= date('g:i A', strtotime($payment['created_at'])) ?></p>
+                            </td>
+                            <td class="py-3 px-4">
+                                <p class="font-semibold text-[#5C4033]"><?= htmlspecialchars($payment['fname'] . ' ' . $payment['lname']) ?></p>
+                                <p class="text-xs text-[#5C4033] opacity-70"><?= htmlspecialchars($payment['email']) ?></p>
+                            </td>
+                            <td class="py-3 px-4">
+                                <div class="flex items-center gap-2">
+                                    <i class="fa-solid fa-door-closed text-[#C19A6B]"></i>
+                                    <div>
+                                        <p class="font-semibold text-[#5C4033]">Room #<?= htmlspecialchars($payment['room_number']) ?></p>
+                                        <p class="text-xs text-[#5C4033] opacity-70">Rate: ₱<?= number_format($payment['room_rate'], 2) ?></p>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="py-3 px-4">
+                                <span class="font-bold text-green-600 text-lg">₱<?= number_format($payment['amount'], 2) ?></span>
+                            </td>
+                            <td class="py-3 px-4">
+                                <span class="px-3 py-1 rounded-full text-sm font-semibold bg-[#E5D3B3] text-[#5C4033]">
+                                    <?= ucfirst(str_replace('_', ' ', $payment['payment_method'])) ?>
+                                </span>
+                                <?php if (!empty($payment['payment_for'])): ?>
+                                    <p class="text-xs text-[#5C4033] opacity-75 mt-1">
+                                        <?= htmlspecialchars(ucfirst(str_replace('_', ' ', $payment['payment_for']))) ?>
+                                    </p>
+                                <?php endif; ?>
+                            </td>
+                            <td class="py-3 px-4">
+                                <?php if (!empty($payment['notes'])): ?>
+                                    <p class="text-sm text-[#5C4033] payment-note truncate max-w-[160px]" title="<?= htmlspecialchars($payment['notes']) ?>">
+                                        <?= htmlspecialchars($payment['notes']) ?>
+                                    </p>
+                                <?php else: ?>
+                                    <span class="text-xs text-[#5C4033] opacity-60">No notes</span>
+                                <?php endif; ?>
+                            </td>
+                            <td class="py-3 px-4">
+                                <div class="flex items-center gap-2">
+                                    <button type="button" onclick="approvePayment(<?= (int) $payment['id'] ?>)"
+                                            class="w-10 h-10 rounded-full border border-green-300 text-green-700 bg-green-100 hover:bg-green-200 transition"
+                                            title="Approve payment">
+                                        <i class="fa-solid fa-circle-check"></i>
+                                    </button>
+                                    <button type="button" onclick="rejectPayment(<?= (int) $payment['id'] ?>)"
+                                            class="w-10 h-10 rounded-full border border-red-300 text-red-600 bg-red-100 hover:bg-red-200 transition"
+                                            title="Reject payment">
+                                        <i class="fa-solid fa-circle-xmark"></i>
+                                    </button>
+                                    <?php if(!empty($payment['notes'])): ?>
+                                    <button onclick="showNotes('<?= htmlspecialchars($payment['notes']) ?>')" 
+                                            class="px-3 py-1 bg-[#C19A6B] text-white rounded-lg hover:bg-[#A67C52] transition-all duration-200 text-sm">
+                                        <i class="fa-solid fa-note-sticky mr-1"></i>
+                                        Notes
+                                    </button>
+                                    <?php endif; ?>
+                                </div>
+                            </td>
+                        </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <?php endif; ?>
 
         <!-- Payment History Table -->
         <div class="bg-white rounded-xl shadow-lg border border-[#E5D3B3] overflow-hidden">
@@ -164,7 +306,7 @@
                 </div>
             </div>
             
-            <?php if(!empty($paymentHistory)): ?>
+            <?php if(!empty($approvedPayments)): ?>
             <div class="overflow-x-auto">
                 <table class="w-full" id="paymentTable">
                     <thead style="background: #FFF5E1; color: #5C4033;" class="border-b border-[#E5D3B3]">
@@ -174,11 +316,12 @@
                             <th class="py-4 px-4 text-left font-semibold">Room</th>
                             <th class="py-4 px-4 text-left font-semibold">Amount</th>
                             <th class="py-4 px-4 text-left font-semibold">Method</th>
+                            <th class="py-4 px-4 text-left font-semibold">Notes</th>
                             <th class="py-4 px-4 text-left font-semibold no-print">Actions</th>
                         </tr>
                     </thead>
                     <tbody class="bg-[#FFF5E1]" id="paymentTableBody">
-                        <?php foreach($paymentHistory as $payment): ?>
+                        <?php foreach($approvedPayments as $payment): ?>
                         <tr class="payment-row border-b border-[#E5D3B3] hover:bg-[#F5F0E8] transition-all duration-200">
                             <td class="py-4 px-4">
                                 <div>
@@ -205,20 +348,47 @@
                                 <div class="font-bold text-xl text-green-600 payment-amount">₱<?= number_format($payment['amount'], 2) ?></div>
                             </td>
                             <td class="py-4 px-4">
-                                <span class="px-3 py-1 rounded-full text-sm font-semibold bg-[#E5D3B3] text-[#5C4033] payment-method">
-                                    <?= ucfirst(str_replace('_', ' ', $payment['payment_method'])) ?>
-                                </span>
+                                <div class="flex flex-col gap-1">
+                                    <span class="px-3 py-1 rounded-full text-sm font-semibold bg-[#E5D3B3] text-[#5C4033] payment-method">
+                                        <?= ucfirst(str_replace('_', ' ', $payment['payment_method'])) ?>
+                                    </span>
+                                    <?php if (!empty($payment['payment_for'])): ?>
+                                        <span class="text-xs text-[#5C4033] opacity-75">
+                                            <?= htmlspecialchars(ucfirst(str_replace('_', ' ', $payment['payment_for']))) ?>
+                                        </span>
+                                    <?php endif; ?>
+                                    <?php if (!empty($payment['transaction_reference'])): ?>
+                                        <span class="text-xs font-mono text-[#5C4033]">
+                                            Ref: <?= htmlspecialchars($payment['transaction_reference']) ?>
+                                        </span>
+                                    <?php endif; ?>
+                                </div>
+                            </td>
+                            <td class="py-4 px-4">
+                                <?php if (!empty($payment['notes'])): ?>
+                                    <p class="text-sm text-[#5C4033] payment-note truncate max-w-[200px]" title="<?= htmlspecialchars($payment['notes']) ?>">
+                                        <?= htmlspecialchars($payment['notes']) ?>
+                                    </p>
+                                <?php else: ?>
+                                    <span class="text-xs text-[#5C4033] opacity-60">No notes</span>
+                                <?php endif; ?>
                             </td>
                             <td class="py-4 px-4 no-print">
-                                <?php if($payment['notes']): ?>
-                                <button onclick="showNotes('<?= htmlspecialchars($payment['notes']) ?>')" 
-                                        class="px-3 py-1 bg-[#C19A6B] text-white rounded-lg hover:bg-[#A67C52] transition-all duration-200 text-sm">
-                                    <i class="fa-solid fa-note-sticky mr-1"></i>
-                                    Notes
-                                </button>
-                                <?php else: ?>
-                                <span class="text-[#5C4033] opacity-50 text-sm">No notes</span>
-                                <?php endif; ?>
+                                <div class="flex items-center gap-3">
+                                    <span class="flex items-center justify-center w-9 h-9 rounded-full border text-green-600 bg-green-100 border-green-300 shadow-sm" title="Approved">
+                                        <i class="fa-solid fa-circle-check"></i>
+                                    </span>
+                                    <span class="flex items-center justify-center w-9 h-9 rounded-full border text-[#8B7355] bg-[#F6EDE0] border-[#E5D3B3] opacity-70" title="Rejected / Declined">
+                                        <i class="fa-solid fa-circle-xmark"></i>
+                                    </span>
+                                    <?php if(!empty($payment['notes'])): ?>
+                                    <button onclick="showNotes('<?= htmlspecialchars($payment['notes']) ?>')" 
+                                            class="px-3 py-1 bg-[#C19A6B] text-white rounded-lg hover:bg-[#A67C52] transition-all duration-200 text-sm">
+                                        <i class="fa-solid fa-note-sticky mr-1"></i>
+                                        Notes
+                                    </button>
+                                    <?php endif; ?>
+                                </div>
                             </td>
                         </tr>
                         <?php endforeach; ?>
@@ -273,11 +443,49 @@ function closeNotes() {
     document.getElementById('notesModal').classList.add('hidden');
 }
 
+function approvePayment(id) {
+    fetch('<?= site_url('admin/reports/payment-history/approve') ?>', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({id})
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            window.location.reload();
+        } else {
+            alert(data.message || 'Failed to approve payment.');
+        }
+    })
+    .catch(err => alert('Failed to approve payment: ' + err.message));
+}
+
+function rejectPayment(id) {
+    const reason = prompt('Optional: provide a reason for rejecting this payment. Leave blank to skip.');
+    fetch('<?= site_url('admin/reports/payment-history/reject') ?>', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({id, reason})
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            window.location.reload();
+        } else {
+            alert(data.message || 'Failed to reject payment.');
+        }
+    })
+    .catch(err => alert('Failed to reject payment: ' + err.message));
+}
+
 // Search functionality
 function filterPayments() {
     const searchInput = document.getElementById('searchInput');
     const filter = searchInput.value.toLowerCase();
     const tableBody = document.getElementById('paymentTableBody');
+    if (!tableBody) {
+        return;
+    }
     const rows = tableBody.getElementsByClassName('payment-row');
     const noResults = document.getElementById('noResults');
     let visibleRows = 0;
@@ -288,12 +496,14 @@ function filterPayments() {
         const roomNumber = row.querySelector('.room-number').textContent.toLowerCase();
         const paymentAmount = row.querySelector('.payment-amount').textContent.toLowerCase();
         const paymentMethod = row.querySelector('.payment-method').textContent.toLowerCase();
+        const paymentNote = row.querySelector('.payment-note') ? row.querySelector('.payment-note').textContent.toLowerCase() : '';
         
         // Check if any of the searchable fields contain the filter text
         if (tenantName.includes(filter) || 
             roomNumber.includes(filter) || 
             paymentAmount.includes(filter) || 
-            paymentMethod.includes(filter)) {
+            paymentMethod.includes(filter) ||
+            paymentNote.includes(filter)) {
             row.style.display = '';
             visibleRows++;
         } else {

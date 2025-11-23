@@ -74,28 +74,34 @@ class RoomsModel extends Model {
         
         // Generate hash for picture if provided, otherwise keep existing
         $picture_hash = $existing['picture_hash'] ?? null;
-        if (!empty($data['picture'])) {
-            $picture_hash = md5($data['picture'] . time() . rand()); // Create unique hash
+        if (!empty($data['picture']) && $data['picture'] !== ($existing['picture'] ?? null)) {
+            $picture_hash = md5($data['picture'] . time() . rand()); // Create unique hash when picture changes
         }
         
         $sql = "UPDATE {$this->table} 
                 SET room_number = :room_number, room_name = :room_name, beds = :beds, available = :available, payment = :payment, monthly_rate = :monthly_rate, picture = :picture, picture_hash = :picture_hash
                 WHERE id = :id";
         $stmt = $this->pdo->prepare($sql);
-        
-        // Ensure all required parameters are present
+
+        $hasPayment = array_key_exists('payment', $data);
+        $hasMonthlyRate = array_key_exists('monthly_rate', $data);
+
         $params = [
             'id' => $id,
-            'room_number' => $data['room_number'] ?? '',
-            'room_name' => $data['room_name'] ?? ('Room ' . ($data['room_number'] ?? '')),
-            'beds' => $data['beds'] ?? 1,
-            'available' => $data['available'] ?? 1,
-            'payment' => $data['payment'] ?? 0,
-            'monthly_rate' => $data['monthly_rate'] ?? $data['payment'] ?? 0,
-            'picture' => $data['picture'] ?? $existing['picture'],
+            'room_number' => array_key_exists('room_number', $data) ? (string) $data['room_number'] : (string) ($existing['room_number'] ?? ''),
+            'room_name' => array_key_exists('room_name', $data)
+                ? (string) $data['room_name']
+                : (string) ($existing['room_name'] ?? ('Room ' . ($existing['room_number'] ?? ''))),
+            'beds' => array_key_exists('beds', $data) ? (int) $data['beds'] : (int) ($existing['beds'] ?? 1),
+            'available' => array_key_exists('available', $data) ? (int) $data['available'] : (int) ($existing['available'] ?? 0),
+            'payment' => $hasPayment ? (float) $data['payment'] : (float) ($existing['payment'] ?? 0),
+            'monthly_rate' => $hasMonthlyRate
+                ? (float) $data['monthly_rate']
+                : ($hasPayment ? (float) ($data['payment'] ?? 0) : (float) ($existing['monthly_rate'] ?? $existing['payment'] ?? 0)),
+            'picture' => array_key_exists('picture', $data) ? $data['picture'] : ($existing['picture'] ?? null),
             'picture_hash' => $picture_hash
         ];
-        
+
         return $stmt->execute($params);
     }
 
@@ -107,6 +113,47 @@ class RoomsModel extends Model {
     // Delete room
     public function deleteRoom($id) {
         $stmt = $this->pdo->prepare("DELETE FROM {$this->table} WHERE id = ?");
-        return $stmt->execute([$id]);
+        if (!$stmt->execute([$id])) {
+            $error = $stmt->errorInfo();
+            throw new Exception($error[2] ?? 'Unknown database error while deleting room.');
+        }
+        return $stmt->rowCount() > 0;
+    }
+
+    /**
+     * Maintenance helper to recalculate availability for every room based on active occupancy
+     * and approved reservations. Use only for manual reconciliation tasks (e.g., after bulk
+     * data fixes); regular request flows must rely on explicit increments/decrements to avoid
+     * double counting.
+     */
+    public function refreshAvailabilityCounters(): void {
+        $sql = "
+            UPDATE {$this->table} r
+            LEFT JOIN (
+                SELECT room_id, COUNT(*) AS active_count
+                FROM room_occupancy
+                WHERE status = 'active'
+                GROUP BY room_id
+            ) occ ON occ.room_id = r.id
+            LEFT JOIN (
+                SELECT room_id, COUNT(*) AS approved_count
+                FROM reservations
+                WHERE status = 'approved'
+                GROUP BY room_id
+            ) res ON res.room_id = r.id
+            SET r.available = GREATEST(
+                r.beds - GREATEST(
+                    COALESCE(occ.active_count, 0),
+                    COALESCE(res.approved_count, 0)
+                ),
+                0
+            );
+        ";
+
+        try {
+            $this->pdo->exec($sql);
+        } catch (Throwable $e) {
+            throw new Exception('Unable to refresh room availability counters: ' . $e->getMessage(), 0, $e);
+        }
     }
 }

@@ -1,10 +1,11 @@
 <?php
 defined('PREVENT_DIRECT_ACCESS') OR exit('No direct script access allowed');
 if(session_status() === PHP_SESSION_NONE) session_start();
+$darkModeEnabled = false;
 ?>
 
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="<?= $darkModeEnabled ? 'dark' : '' ?>">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -43,19 +44,34 @@ if(session_status() === PHP_SESSION_NONE) session_start();
   }
   .dark body {
     background: #111111 !important;
+    color: #e5e5e5 !important;
   }
   .dark .main-content, .dark .content-area {
     background: #1a1a1a !important;
-    color: #ffffff !important;
+    color: #e5e5e5 !important;
   }
   .dark .user-card {
-    background: #2d2d2d !important;
-    border-color: #444444 !important;
-    color: #ffffff !important;
+    background: #1e1e1e !important;
+    border-color: #3a3a3a !important;
+    color: #e5e5e5 !important;
   }
   .dark .header-section {
     background: #1a1a1a !important;
-    color: #ffffff !important;
+    color: #e5e5e5 !important;
+  }
+  .dark [class*="bg-[#FFF5E1]"], .dark [class*="bg-white"] {
+    background: #1e1e1e !important;
+  }
+  .dark [class*="border-[#C19A6B]"], .dark [class*="border-[#E5D3B3]"] {
+    border-color: #3a3a3a !important;
+  }
+  .dark [class*="text-[#5C4033]"],
+  .dark [class*="text-gray-600"],
+  .dark [class*="text-gray-500"] {
+    color: #e5e5e5 !important;
+  }
+  .dark [class*="text-[#C19A6B]"] {
+    color: #f2c17d !important;
   }
   
   /* Sidebar collapsed text hiding */
@@ -64,52 +80,10 @@ if(session_status() === PHP_SESSION_NONE) session_start();
   }
 </style>
 </head>
-<body class="min-h-screen transition-colors">
+<body class="min-h-screen transition-colors<?= $darkModeEnabled ? ' dark' : '' ?>">
 
 <!-- Sidebar -->
-<div id="sidebar" class="text-[#5C4033] w-64 min-h-screen p-6 fixed left-0 top-0 z-40 shadow-lg">
-  <div class="flex items-center gap-3 mb-8">
-    <div class="bg-[#C19A6B] p-2 rounded-lg">
-      <i class="fa-solid fa-graduation-cap text-2xl text-white"></i>
-    </div>
-    <div class="sidebar-text">
-      <h2 class="text-lg font-bold"><?= htmlspecialchars($userName ?? 'Tenant') ?></h2>
-      <p class="text-sm text-[#5C4033] opacity-75">Tenant Portal</p>
-    </div>
-  </div>
-  
-  <nav class="flex flex-col gap-2">
-    <a href="<?= site_url('user_landing') ?>" class="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-[#C19A6B] hover:text-white transition">
-      <i class="fa-solid fa-home"></i> <span>Dashboard</span>
-    </a>
-    <a href="<?= site_url('user/reservations') ?>" class="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-[#C19A6B] hover:text-white transition">
-      <i class="fa-solid fa-list-check"></i> <span>My Reservations</span>
-    </a>
-    <a href="<?= site_url('user/payments') ?>" class="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-[#C19A6B] hover:text-white transition">
-      <i class="fa-solid fa-credit-card"></i> <span>Payment History</span>
-    </a>
-    <a href="<?= site_url('user/maintenance') ?>" class="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-[#C19A6B] hover:text-white transition">
-      <i class="fa-solid fa-wrench"></i> <span>Maintenance</span>
-    </a>
-    <a href="<?= site_url('user/announcements') ?>" class="flex items-center gap-3 px-4 py-3 rounded-lg bg-[#C19A6B] text-white font-semibold">
-      <i class="fa-solid fa-bullhorn"></i> <span>Announcements</span>
-    </a>
-    <a href="<?= site_url('user/profile') ?>" class="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-[#C19A6B] hover:text-white transition">
-      <i class="fa-solid fa-user"></i> <span>Profile</span>
-    </a>
-    <a href="<?= site_url('user/contact') ?>" class="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-[#C19A6B] hover:text-white transition">
-      <i class="fa-solid fa-envelope"></i> <span>Contact Admin</span>
-    </a>
-    <hr class="border-[#5C4033] border-opacity-20 my-4">
-    <div class="px-4 py-2 text-xs text-[#5C4033] opacity-75">
-      <i class="fa-solid fa-phone mr-2"></i>
-      <span class="sidebar-text">Contact: 09517394938</span>
-    </div>
-    <a href="#" onclick="confirmLogout()" class="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-red-400 hover:text-white transition">
-      <i class="fa-solid fa-right-from-bracket"></i> <span>Logout</span>
-    </a>
-  </nav>
-</div>
+<?php include __DIR__ . '/includes/sidebar.php'; ?>
 
 <!-- Main Content -->
 <div class="flex-1 transition-all duration-300" id="mainContent" style="margin-left: 16rem;">
@@ -127,13 +101,10 @@ if(session_status() === PHP_SESSION_NONE) session_start();
         <p class="text-[#5C4033] opacity-75 text-sm">Stay updated with the latest news and updates</p>
       </div>
     </div>
-    <div class="flex items-center gap-4">
-      <button id="darkModeToggle" class="p-2 rounded-lg border border-[#C19A6B] hover:bg-[#C19A6B] hover:text-white transition">
-        <i class="fa-solid fa-moon" id="darkModeIcon"></i>
-      </button>
-      <div class="text-xs text-[#5C4033] opacity-75">
-        <i class="fa-solid fa-phone mr-1"></i>
-        09517394938
+    <div class="flex items-center gap-4 flex-wrap justify-end">
+      <div class="flex items-center gap-2 text-xs text-[#5C4033] opacity-75 dark:text-gray-300 dark:opacity-100">
+        <i class="fa-solid fa-phone"></i>
+        <span>09517394938</span>
       </div>
     </div>
   </div>
@@ -182,7 +153,8 @@ if(session_status() === PHP_SESSION_NONE) session_start();
             <!-- Announcement Header -->
             <div class="flex items-start justify-between mb-4">
               <div class="flex-1">
-                <div class="flex items-center gap-2 mb-2">
+                <span class="text-xs font-semibold uppercase tracking-wide text-[#C19A6B]">Subject</span>
+                <div class="flex items-center gap-2 mb-2 mt-1">
                   <h2 class="text-xl font-bold text-[#5C4033]"><?= htmlspecialchars($announcement['title']) ?></h2>
                   <?php 
                   $priorityColors = [
@@ -212,6 +184,7 @@ if(session_status() === PHP_SESSION_NONE) session_start();
 
             <!-- Announcement Content -->
             <div class="mb-6">
+              <span class="block text-xs font-semibold uppercase tracking-wide text-[#C19A6B] mb-2">Message</span>
               <div class="text-[#5C4033] leading-relaxed whitespace-pre-line"><?= nl2br(htmlspecialchars($announcement['content'])) ?></div>
             </div>
 
@@ -309,65 +282,20 @@ if (sidebarToggle) {
 
 // Mobile menu functionality
 const menuBtn = document.getElementById('menuBtn');
-const sidebar = document.getElementById('sidebar');
 const mobileOverlay = document.getElementById('mobileOverlay');
 
-menuBtn.addEventListener('click', () => {
+if (menuBtn && mobileOverlay) {
+  menuBtn.addEventListener('click', () => {
     sidebar.classList.toggle('open');
     mobileOverlay.classList.toggle('hidden');
-});
+  });
 
-mobileOverlay.addEventListener('click', () => {
+  mobileOverlay.addEventListener('click', () => {
     sidebar.classList.remove('open');
     mobileOverlay.classList.add('hidden');
-});
-
-// Dark mode functionality
-function initDarkMode() {
-    const darkModeToggle = document.getElementById('darkModeToggle');
-    const darkModeIcon = document.getElementById('darkModeIcon');
-    const mainBody = document.body;
-    
-    if (!darkModeToggle) return;
-    
-    // Check for saved dark mode preference
-    const isDarkMode = localStorage.getItem("userDarkMode") === "true";
-    if (isDarkMode) {
-        mainBody.classList.add("dark");
-        if(darkModeIcon) darkModeIcon.className = "fa-solid fa-sun";
-    }
-    
-    darkModeToggle.addEventListener("click", () => {
-        mainBody.classList.toggle("dark");
-        const isDark = mainBody.classList.contains("dark");
-        
-        // Save preference
-        localStorage.setItem("userDarkMode", isDark);
-        
-        // Update icon
-        if(darkModeIcon) {
-            darkModeIcon.className = isDark ? "fa-solid fa-sun" : "fa-solid fa-moon";
-        }
-        
-        // Update database setting via AJAX
-        fetch("<?= site_url('settings/update') ?>", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/x-www-form-urlencoded",
-            },
-            body: "dark_mode_user=" + (isDark ? "1" : "0") + "&ajax=1"
-        });
-    });
+  });
 }
-
-// Initialize when DOM is ready
-if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", initDarkMode);
-} else {
-    initDarkMode();
-}
-
-// Filter announcements by priority
+// Sidebar toggle functionality
 document.addEventListener('DOMContentLoaded', function() {
     const priorityFilter = document.getElementById('priorityFilter');
     if (priorityFilter) {
@@ -415,19 +343,26 @@ async function submitComment(event, announcementId) {
     if (!confirmed) return;
     
     try {
-        const response = await fetch('<?= site_url('announcements/comment') ?>', {
-            method: 'POST',
-            body: formData
-        });
-        
-        if (response.ok) {
-            // Reload page to show new comment
-            window.location.reload();
-        } else {
-            throw new Error('Failed to submit comment');
+      const response = await fetch('<?= site_url('announcements/comment') ?>', {
+        method: 'POST',
+        body: formData,
+        credentials: 'same-origin',
+        headers: {
+          'X-Requested-With': 'XMLHttpRequest'
         }
+      });
+
+      const data = await response.json().catch(() => null);
+
+      if (response.ok && data && data.status === 'success') {
+        window.location.reload();
+        return;
+      }
+
+      const message = data && data.message ? data.message : 'Failed to submit comment.';
+      throw new Error(message);
     } catch (error) {
-        alert('Error submitting comment. Please try again.');
+      alert(error.message);
     }
 }
 

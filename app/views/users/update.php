@@ -1,5 +1,20 @@
+<?php
+defined('PREVENT_DIRECT_ACCESS') OR exit('No direct script access allowed');
+$darkModeEnabled = false;
+
+$bodyBaseClass = 'min-h-screen flex items-center justify-center font-sans';
+$bodyInlineStyle = 'background: #FFF5E1;';
+$containerClass = 'p-8 rounded-2xl shadow-lg w-full max-w-md border bg-white';
+$titleClass = 'text-2xl font-semibold text-center text-[#5C4033] mb-6';
+$labelClass = 'block text-[#5C4033] mb-1 font-medium';
+$inputClass = 'w-full px-4 py-3 border rounded-xl focus:ring-2 focus:outline-none';
+$inputStyle = 'border-color: #C19A6B; background: #FFF5E1;';
+$buttonPrimaryClass = 'flex-1 text-white font-medium py-3 rounded-xl shadow-md transition duration-200 hover:bg-[#B07A4B]';
+$fullNameValue = isset($user) ? trim(($user['fname'] ?? '') . ' ' . ($user['lname'] ?? '')) : '';
+?>
+
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="<?= $darkModeEnabled ? 'dark' : '' ?>">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,53 +22,40 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 </head>
-<body class="min-h-screen flex items-center justify-center font-sans" style="background: #FFF5E1;">
+<body class="<?= $bodyBaseClass ?>" style="<?= $bodyInlineStyle ?>">
 
-  <div class="p-8 rounded-2xl shadow-lg w-full max-w-md border" style="background: white; border-color: #C19A6B;">
-    <h2 class="text-2xl font-semibold text-center text-[#5C4033] mb-6">
+  <div class="<?= $containerClass ?>">
+    <h2 class="<?= $titleClass ?>">
       <i class="fas fa-user-edit text-[#C19A6B] mr-2"></i>Update User
     </h2>
 
-    <form action="<?=site_url('users/update/'.$user['id'])?>" method="POST" class="space-y-4">
-      <!-- First Name -->
-      <div>
-        <label class="block text-[#5C4033] mb-1 font-medium">
-          <i class="fas fa-user text-[#C19A6B] mr-1"></i>First Name
-        </label>
-        <input type="text" name="fname" value="<?= html_escape($user['fname'])?>" required
-               class="w-full px-4 py-3 border rounded-xl focus:ring-2 focus:outline-none" style="border-color: #C19A6B; background: #FFF5E1;" 
-               onfocus="this.style.boxShadow='0 0 0 2px #C19A6B'" onblur="this.style.boxShadow='none'">
+    <?php if (!empty($error)): ?>
+      <div class="mb-4 rounded-lg border border-red-400 bg-red-100 px-4 py-3 text-sm text-red-700">
+        <?= html_escape($error) ?>
       </div>
+    <?php endif; ?>
 
-      <!-- Last Name -->
+    <form action="<?=site_url('users/update/'.$user['id'])?>" method="POST" class="space-y-4">
+      <input type="hidden" name="from_modal" value="0">
+
+      <!-- Full Name -->
       <div>
-        <label class="block text-[#5C4033] mb-1 font-medium">
-          <i class="fas fa-user text-[#C19A6B] mr-1"></i>Last Name
+        <label class="<?= $labelClass ?>">
+          <i class="fas fa-user text-[#C19A6B] mr-1"></i>Full Name
         </label>
-        <input type="text" name="lname" value="<?= html_escape($user['lname'])?>" required
-               class="w-full px-4 py-3 border rounded-xl focus:ring-2 focus:outline-none" style="border-color: #C19A6B; background: #FFF5E1;"
+        <input type="text" name="full_name" value="<?= html_escape($fullNameValue) ?>" required
+               class="<?= $inputClass ?>" style="<?= $inputStyle ?>"
                onfocus="this.style.boxShadow='0 0 0 2px #C19A6B'" onblur="this.style.boxShadow='none'">
       </div>
 
       <!-- Email -->
       <div>
-        <label class="block text-[#5C4033] mb-1 font-medium">
+        <label class="<?= $labelClass ?>">
           <i class="fas fa-envelope text-[#C19A6B] mr-1"></i>Email Address
         </label>
         <input type="email" name="email" value="<?= html_escape($user['email'])?>" required
-               class="w-full px-4 py-3 border rounded-xl focus:ring-2 focus:outline-none" style="border-color: #C19A6B; background: #FFF5E1;"
+               class="<?= $inputClass ?>" style="<?= $inputStyle ?>"
                onfocus="this.style.boxShadow='0 0 0 2px #C19A6B'" onblur="this.style.boxShadow='none'">
-      </div>
-
-      <!-- Password (Optional) -->
-      <div>
-        <label class="block text-[#5C4033] mb-1 font-medium">
-          <i class="fas fa-lock text-[#C19A6B] mr-1"></i>New Password (Optional)
-        </label>
-        <input type="password" name="password"
-               class="w-full px-4 py-3 border rounded-xl focus:ring-2 focus:outline-none" style="border-color: #C19A6B; background: #FFF5E1;"
-               onfocus="this.style.boxShadow='0 0 0 2px #C19A6B'" onblur="this.style.boxShadow='none'"
-               placeholder="Leave blank to keep current password">
       </div>
 
       <!-- Buttons -->
@@ -63,7 +65,7 @@
           <i class="fas fa-times mr-1"></i>Cancel
         </a>
         <button type="submit"
-                class="flex-1 text-white font-medium py-3 rounded-xl shadow-md transition duration-200 hover:bg-[#B07A4B]" style="background: #C19A6B;">
+          class="<?= $buttonPrimaryClass ?>" style="background: #C19A6B;">
           <i class="fas fa-save mr-1"></i>Update
         </button>
       </div>

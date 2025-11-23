@@ -38,28 +38,28 @@
             <?php endif; ?>
 
             <form method="POST" action="<?= site_url('auth/verify') ?>" id="verificationForm">
-                <!-- Captcha Section -->
+                <!-- PIN Verification Section -->
                 <div class="mb-6">
                     <label class="block text-[#5C4033] font-semibold mb-4 text-center">
-                        <i class="fa-solid fa-calculator mr-2"></i>
-                        Security Check
+                        <i class="fa-solid fa-key mr-2"></i>
+                        Enter Verification PIN
                     </label>
-                    
                     <div class="bg-[#FFF5E1] border-2 border-[#C19A6B] rounded-lg p-6 text-center mb-4">
-                        <p class="text-[#5C4033] text-lg mb-2">Solve this math problem:</p>
-                        <p class="text-[#5C4033] text-3xl font-bold font-mono"><?= htmlspecialchars($captcha_question) ?></p>
+                        <p class="text-[#5C4033] text-lg mb-2">A 6-digit PIN was sent to your email address.</p>
+                        <p class="text-[#5C4033] text-3xl font-bold font-mono">Check your inbox for the PIN.</p>
                     </div>
-                    
-                    <input type="number" 
-                           name="captcha" 
-                           id="captchaAnswer"
+                    <input type="text"
+                           name="pin"
+                           id="pinInput"
+                           maxlength="6"
+                           pattern="\d{6}"
                            class="w-full px-4 py-3 rounded-lg border-2 border-[#E5D3B3] focus:border-[#C19A6B] focus:outline-none text-center text-2xl font-mono"
-                           placeholder="Enter your answer"
+                           placeholder="Enter 6-digit PIN"
                            required
                            autocomplete="off">
                 </div>
 
-                <button type="submit" 
+                <button type="submit"
                         class="w-full bg-[#C19A6B] hover:bg-[#5C4033] text-white font-semibold py-3 px-4 rounded-lg transition duration-300 flex items-center justify-center gap-2"
                         id="verifyBtn">
                     <i class="fa-solid fa-check-circle"></i>
@@ -71,11 +71,12 @@
             <div class="mt-6 p-4 bg-[#FFF5E1] rounded-lg border border-[#E5D3B3]">
                 <h4 class="text-[#5C4033] font-semibold mb-2">
                     <i class="fa-solid fa-lightbulb mr-2"></i>
-                    Security Note
+                    Verification Note
                 </h4>
                 <div class="text-sm text-[#5C4033] opacity-75 space-y-1">
-                    <p>• This simple security check helps prevent automated registrations</p>
-                    <p>• After verification, you can immediately log in to your account</p>
+                    <p>• Enter the PIN sent to your email to verify your account.</p>
+                    <p>• The PIN is valid for 1 hour. You can request a new one if expired.</p>
+                    <p>• After verification, you can immediately log in to your account.</p>
                     <p>• Contact support if you need assistance: 09517394938</p>
                 </div>
             </div>
@@ -94,17 +95,15 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    const captchaInput = document.getElementById('captchaAnswer');
-    
-    // Auto-focus the captcha input
-    captchaInput.focus();
-    
-    // Submit form on Enter
-    captchaInput.addEventListener('keypress', function(e) {
-        if (e.key === 'Enter') {
-            document.getElementById('verificationForm').submit();
-        }
-    });
+    const pinInput = document.getElementById('pinInput');
+    if (pinInput) {
+        pinInput.focus();
+        pinInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                document.getElementById('verificationForm').submit();
+            }
+        });
+    }
 });
 </script>
 

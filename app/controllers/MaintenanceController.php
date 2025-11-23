@@ -8,26 +8,31 @@ class MaintenanceController extends Controller {
     public function __construct() {
         parent::__construct();
         if(session_status() === PHP_SESSION_NONE) session_start();
-        
-        // Check if user is logged in
-        if (!isset($_SESSION['user'])) {
-            redirect(site_url('auth/login'));
-            exit;
-        }
     }
 
     // User maintenance requests page
     public function index() {
+        $this->requireUser();
         // Use $_SESSION['user'] directly as user ID (consistent with other controllers)
         $user_id = $_SESSION['user'];
-        
-        $data['requests'] = $this->getUserMaintenanceRequests($user_id);
-        $data['rooms'] = $this->getAvailableRooms();
+        $requests = $this->getUserMaintenanceRequests($user_id);
+
+        $data = [
+            'maintenanceRequests' => $requests,
+            'userRooms' => $this->getUserRooms($user_id),
+            'pendingCount' => $this->countRequestsByStatus($requests, 'pending'),
+            'inProgressCount' => $this->countRequestsByStatus($requests, 'in_progress'),
+            'completedCount' => $this->countRequestsByStatus($requests, 'completed'),
+            'success' => $this->session->flashdata('success') ?? '',
+            'error' => $this->session->flashdata('error') ?? ''
+        ];
+
         $this->call->view('user/maintenance', $data);
     }
 
     // Submit new maintenance request
     public function submit() {
+        $this->requireUser();
         if ($this->io->method() == 'post') {
             $title = $this->io->post('title');
             $description = $this->io->post('description');
@@ -62,19 +67,20 @@ class MaintenanceController extends Controller {
 
     // Admin maintenance requests page
     public function admin() {
-        if (!isset($_SESSION['user']) || $_SESSION['user']['role'] !== 'admin') {
-            redirect(site_url('auth/login'));
-        }
-        
-        $data['requests'] = $this->getAllMaintenanceRequests();
+        $this->requireAdmin();
+
+        $data = [
+            'maintenanceRequests' => $this->getAllMaintenanceRequests(),
+            'success' => $this->session->flashdata('success') ?? '',
+            'error' => $this->session->flashdata('error') ?? ''
+        ];
+
         $this->call->view('admin/maintenance', $data);
     }
 
     // Update maintenance request status (admin only)
     public function updateStatus() {
-        if (!isset($_SESSION['user']) || $_SESSION['user']['role'] !== 'admin') {
-            redirect(site_url('auth/login'));
-        }
+        $this->requireAdmin();
         
         if ($this->io->method() == 'post') {
             $id = $this->io->post('id');
@@ -97,7 +103,21 @@ class MaintenanceController extends Controller {
             }
         }
         
-        redirect(site_url('maintenance/admin'));
+        redirect(site_url('admin/maintenance'));
+    }
+
+    private function requireUser(): void {
+        if (!isset($_SESSION['user'])) {
+            redirect(site_url('auth/login'));
+            exit;
+        }
+    }
+
+    private function requireAdmin(): void {
+        if (!isset($_SESSION['admin'])) {
+            redirect(site_url('auth/login'));
+            exit;
+        }
     }
 
     // Helper methods
@@ -131,6 +151,47 @@ class MaintenanceController extends Controller {
         } catch (Exception $e) {
             return [];
         }
+    }
+
+    private function getUserRooms($user_id) {
+        try {
+            $dbConfig = DatabaseConfig::getInstance();
+            $pdo = $dbConfig->getConnection();
+            $stmt = $pdo->prepare("SELECT DISTINCT rm.id, rm.room_number
+                                   FROM reservations r
+                                   JOIN rooms rm ON r.room_id = rm.id
+                                   WHERE r.user_id = ?
+                                     AND r.status IN ('approved', 'confirmed')
+                                   ORDER BY rm.room_number ASC");
+            $stmt->execute([$user_id]);
+
+            $rooms = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            if (!empty($rooms)) {
+                return $rooms;
+            }
+
+            // Fallback to any rooms tied to maintenance requests if reservation data is missing
+            $fallback = $pdo->prepare("SELECT DISTINCT rm.id, rm.room_number
+                                        FROM maintenance_requests mr
+                                        JOIN rooms rm ON mr.room_id = rm.id
+                                        WHERE mr.user_id = ?
+                                        ORDER BY rm.room_number ASC");
+            $fallback->execute([$user_id]);
+            return $fallback->fetchAll(PDO::FETCH_ASSOC);
+        } catch (Exception $e) {
+            return [];
+        }
+    }
+
+    private function countRequestsByStatus(array $requests, string $status): int {
+        $count = 0;
+        foreach ($requests as $request) {
+            if (($request['status'] ?? '') === $status) {
+                $count++;
+            }
+        }
+        return $count;
     }
 
     private function insertMaintenanceRequest($data) {

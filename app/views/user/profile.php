@@ -1,10 +1,15 @@
 <?php
 defined('PREVENT_DIRECT_ACCESS') OR exit('No direct script access allowed');
 if(session_status() === PHP_SESSION_NONE) session_start();
+$darkModeEnabled = false;
+$userDisplayName = trim(($user['fname'] ?? '') . ' ' . ($user['lname'] ?? ''));
+if ($userDisplayName !== '') {
+  $_SESSION['user_name'] = $userDisplayName;
+}
 ?>
 
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="<?= $darkModeEnabled ? 'dark' : '' ?>">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -29,48 +34,33 @@ if(session_status() === PHP_SESSION_NONE) session_start();
   body {
     background: linear-gradient(135deg, #FFF5E1 0%, #F5E6D3 100%);
   }
+  .dark body {
+    background: #111111 !important;
+    color: #e5e5e5 !important;
+  }
+  .dark #sidebar {
+    background: #1a1a1a !important;
+  }
+  .dark [class*="bg-white"], .dark [class*="bg-[#FFF5E1]"] {
+    background: #1f1f1f !important;
+  }
+  .dark [class*="border-[#C19A6B]"] {
+    border-color: #3a3a3a !important;
+  }
+  .dark [class*="text-[#5C4033]"],
+  .dark [class*="text-gray-600"],
+  .dark [class*="text-gray-500"] {
+    color: #e5e5e5 !important;
+  }
+  .dark [class*="opacity-75"], .dark [class*="opacity-60"] {
+    color: rgba(229, 229, 229, 0.75) !important;
+  }
 </style>
 </head>
-<body class="font-sans flex min-h-screen">
+<body class="font-sans flex min-h-screen<?= $darkModeEnabled ? ' dark' : '' ?>">
 
 <!-- Sidebar -->
-<div id="sidebar" class="text-[#5C4033] w-64 min-h-screen p-6 fixed left-0 top-0 z-40 shadow-lg">
-  <div class="flex items-center gap-3 mb-8">
-    <div class="bg-[#C19A6B] p-2 rounded-lg">
-      <i class="fa-solid fa-graduation-cap text-2xl text-white"></i>
-    </div>
-    <div>
-      <h2 class="text-lg font-bold"><?= htmlspecialchars($user['fname'] ?? 'Tenant') ?> <?= htmlspecialchars($user['lname'] ?? '') ?></h2>
-      <p class="text-sm text-[#5C4033] opacity-75">Tenant Portal</p>
-    </div>
-  </div>
-  
-  <nav class="flex flex-col gap-2">
-    <a href="<?= site_url('user_landing') ?>" class="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-[#C19A6B] hover:text-white transition">
-      <i class="fa-solid fa-home"></i> <span>Dashboard</span>
-    </a>
-    <a href="<?= site_url('user/reservations') ?>" class="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-[#C19A6B] hover:text-white transition">
-      <i class="fa-solid fa-list-check"></i> <span>My Reservations</span>
-    </a>
-    <a href="<?= site_url('user/payments') ?>" class="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-[#C19A6B] hover:text-white transition">
-      <i class="fa-solid fa-credit-card"></i> <span>Payment History</span>
-    </a>
-    <a href="<?= site_url('user/profile') ?>" class="flex items-center gap-3 px-4 py-3 rounded-lg bg-[#C19A6B] text-white font-semibold">
-      <i class="fa-solid fa-user"></i> <span>Profile</span>
-    </a>
-    <a href="<?= site_url('user/contact') ?>" class="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-[#C19A6B] hover:text-white transition">
-      <i class="fa-solid fa-envelope"></i> <span>Contact Admin</span>
-    </a>
-    <hr class="border-[#5C4033] border-opacity-20 my-4">
-    <div class="px-4 py-2 text-xs text-[#5C4033] opacity-75">
-      <i class="fa-solid fa-phone mr-2"></i>
-      <span>Contact: 09517394938</span>
-    </div>
-    <a href="#" onclick="confirmLogout()" class="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-red-400 hover:text-white transition">
-      <i class="fa-solid fa-right-from-bracket"></i> <span>Logout</span>
-    </a>
-  </nav>
-</div>
+<?php include __DIR__ . '/includes/sidebar.php'; ?>
 
 <!-- Main Content -->
 <div class="flex-1 ml-64 transition-all duration-300" id="mainContent">
@@ -83,9 +73,11 @@ if(session_status() === PHP_SESSION_NONE) session_start();
       <h1 class="font-bold text-xl text-[#5C4033]">My Profile</h1>
       <p class="text-[#5C4033] opacity-75 text-sm">Manage your personal information</p>
     </div>
-    <div class="text-xs text-[#5C4033] opacity-75">
-      <i class="fa-solid fa-phone mr-1"></i>
-      09517394938
+    <div class="flex items-center gap-4 flex-wrap justify-end">
+      <div class="flex items-center gap-2 text-xs text-[#5C4033] opacity-75 dark:text-gray-300 dark:opacity-100">
+        <i class="fa-solid fa-phone"></i>
+        <span>09517394938</span>
+      </div>
     </div>
   </div>
 

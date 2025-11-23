@@ -101,6 +101,10 @@ class Controller
 
 		$this->call =& load_class('invoker', 'kernel');
 		$this->call->initialize();
+
+		if (function_exists('sync_dark_mode_session')) {
+			sync_dark_mode_session();
+		}
 	}
 
 	/**

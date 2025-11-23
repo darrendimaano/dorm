@@ -11,6 +11,14 @@
 
     <div class="container mx-auto px-4 py-8">
         <!-- Header -->
+        <?php
+        $isAdminRoute = isset($isAdminRoute)
+            ? (bool) $isAdminRoute
+            : strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/rooms') !== false;
+        $baseRoute = $isAdminRoute ? 'admin/rooms' : 'rooms';
+        $backUrl = site_url($baseRoute);
+        ?>
+
         <div style="background: #FFF5E1;" class="rounded-lg shadow-lg p-6 mb-6 border" style="border-color: #C19A6B;">
             <div class="flex items-center justify-between">
                 <div>
@@ -19,11 +27,7 @@
                     </h1>
                     <p class="text-[#5C4033] opacity-75 mt-2">Edit room information and availability</p>
                 </div>
-                <a href="<?= 
-                    strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/rooms') !== false ? 
-                    site_url('admin/rooms') : 
-                    site_url('rooms') 
-                ?>" class="inline-flex items-center px-4 py-2 bg-[#C19A6B] text-white rounded-lg hover:bg-[#5C4033] transition duration-300">
+                <a href="<?= htmlspecialchars($backUrl, ENT_QUOTES, 'UTF-8') ?>" class="inline-flex items-center px-4 py-2 bg-[#C19A6B] text-white rounded-lg hover:bg-[#5C4033] transition duration-300">
                     <i class="fa-solid fa-arrow-left mr-2"></i>Back to Rooms
                 </a>
             </div>
@@ -43,11 +47,9 @@
 
         <!-- Update Form -->
         <div style="background: #FFF5E1;" class="rounded-lg shadow-lg p-6 border" style="border-color: #C19A6B;">
-            <?php 
-            $current_url = $_SERVER['REQUEST_URI'] ?? '';
-            $form_action = site_url(trim($current_url, '/'));
-            ?>
-            <form method="POST" action="<?= $form_action ?>" enctype="multipart/form-data" class="w-full px-4">
+            <?php $formAction = site_url($baseRoute . '/update'); ?>
+            <form method="POST" action="<?= htmlspecialchars($formAction, ENT_QUOTES, 'UTF-8') ?>" enctype="multipart/form-data" class="w-full px-4">
+                <input type="hidden" name="id" value="<?= (int) $room['id']; ?>">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <!-- Room Number -->
                     <div class="md:col-span-1">
@@ -58,6 +60,17 @@
                                value="<?= htmlspecialchars($room['room_number']); ?>"
                                class="w-full px-3 py-2 border border-[#C19A6B] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C19A6B] bg-[#FFF5E1]"
                                placeholder="e.g. 101, A-12, Room 5">
+                    </div>
+
+                    <!-- Room Name -->
+                    <div class="md:col-span-1">
+                        <label for="room_name" class="block text-sm font-medium text-[#5C4033] mb-2">
+                            <i class="fa-solid fa-tag text-[#C19A6B] mr-1"></i>Room Name
+                        </label>
+                        <input type="text" id="room_name" name="room_name"
+                               value="<?= htmlspecialchars($room['room_name'] ?? ('Room ' . $room['room_number'])); ?>"
+                               class="w-full px-3 py-2 border border-[#C19A6B] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C19A6B] bg-[#FFF5E1]"
+                               placeholder="Deluxe Room, Dorm A, etc.">
                     </div>
 
                     <!-- Number of Beds -->
@@ -92,6 +105,17 @@
                                class="w-full px-3 py-2 border border-[#C19A6B] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C19A6B] bg-[#FFF5E1]"
                                placeholder="5000.00">
                     </div>
+
+                    <!-- Monthly Rate -->
+                    <div class="md:col-span-1">
+                        <label for="monthly_rate" class="block text-sm font-medium text-[#5C4033] mb-2">
+                            <i class="fa-solid fa-coins text-[#C19A6B] mr-1"></i>Monthly Rate (Optional)
+                        </label>
+                        <input type="number" id="monthly_rate" name="monthly_rate" min="0" step="0.01"
+                               value="<?= htmlspecialchars($room['monthly_rate'] ?? $room['payment']); ?>"
+                               class="w-full px-3 py-2 border border-[#C19A6B] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C19A6B] bg-[#FFF5E1]"
+                               placeholder="5000.00">
+                    </div>
                     
                     <!-- Picture Upload -->
                     <div class="md:col-span-2">
@@ -109,11 +133,7 @@
 
                 <!-- Submit Buttons -->
                 <div class="flex justify-end space-x-4 mt-8">
-                    <a href="<?= 
-                        strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/rooms') !== false ? 
-                        site_url('admin/rooms') : 
-                        site_url('rooms') 
-                    ?>" 
+                    <a href="<?= htmlspecialchars($backUrl, ENT_QUOTES, 'UTF-8') ?>" 
                        class="inline-flex items-center px-6 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition duration-300">
                         <i class="fa-solid fa-times mr-2"></i>Cancel
                     </a>

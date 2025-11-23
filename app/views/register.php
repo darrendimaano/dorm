@@ -21,6 +21,11 @@ defined('PREVENT_DIRECT_ACCESS') OR exit('No direct script access allowed');
             <i class="fas fa-exclamation-circle mr-2"></i><?= htmlspecialchars($error) ?>
         </div>
     <?php endif; ?>
+    <?php if(!empty($success)): ?>
+        <div class="p-3 rounded mb-4 border" style="background: #F0FFF0; border-color: #6BDC6B; color: #1CB91C;">
+            <i class="fas fa-check-circle mr-2"></i><?= htmlspecialchars($success) ?>
+        </div>
+    <?php endif; ?>
 
     <form method="POST" class="flex flex-col gap-4">
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">

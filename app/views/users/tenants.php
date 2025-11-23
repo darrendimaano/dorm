@@ -72,32 +72,7 @@ if(session_status() === PHP_SESSION_NONE) session_start();
 <body class="bg-white font-sans flex">
 
 <!-- Sidebar -->
-<div id="sidebar" class="text-[#5C4033] w-64 min-h-screen p-6 fixed left-0 top-0 z-50 shadow-lg">
-  <h2 class="text-2xl font-bold mb-8">🏨</h2>
-  <nav class="flex flex-col gap-4">
-    <a href="<?= site_url('dashboard') ?>" class="flex items-center gap-2 px-4 py-2 rounded hover:bg-[#C19A6B] transition">
-      <i class="fa-solid fa-chart-line"></i> <span>Dashboard</span>
-    </a>
-    <a href="<?=site_url('users')?>" class="flex items-center gap-2 px-4 py-2 rounded bg-[#C19A6B] text-white font-semibold">
-      <i class="fa-solid fa-user"></i> <span>Users</span>
-    </a>
-    <a href="<?=site_url('rooms')?>" class="flex items-center gap-2 px-4 py-2 rounded hover:bg-[#C19A6B] transition">
-      <i class="fa-solid fa-bed"></i> <span>Rooms</span>
-    </a>
-    <a href="<?=site_url('admin/reservations')?>" class="flex items-center gap-2 px-4 py-2 rounded hover:bg-[#C19A6B] transition">
-      <i class="fa-solid fa-list-check"></i> <span>Reservations</span>
-    </a>
-    <a href="<?=site_url('admin/messages')?>" class="flex items-center gap-2 px-4 py-2 rounded hover:bg-[#C19A6B] transition">
-      <i class="fa-solid fa-envelope"></i> <span>Messages</span>
-    </a>
-    <a href="<?=site_url('settings')?>" class="flex items-center gap-2 px-4 py-2 rounded hover:bg-[#C19A6B] transition">
-      <i class="fa-solid fa-cog"></i> <span>Settings</span>
-    </a>
-    <a href="<?=site_url('auth/logout')?>" class="flex items-center gap-2 px-4 py-2 rounded hover:bg-red-300 transition mt-6">
-      <i class="fa-solid fa-right-from-bracket"></i> <span>Logout</span>
-    </a>
-  </nav>
-</div>
+<?php include __DIR__ . '/../includes/sidebar.php'; ?>
 
 <!-- Main Content -->
 <div class="flex-1 ml-64 transition-all duration-300 content-area" id="mainContent">
@@ -150,7 +125,7 @@ if(session_status() === PHP_SESSION_NONE) session_start();
               <option value="">Select Student</option>
               <?php
               try {
-                $pdo = new PDO("mysql:host=localhost;dbname=mockdata;charset=utf8mb4", "jeany", "jeany");
+                $pdo = new PDO("mysql:host=localhost;dbname=mockdata;charset=utf8mb4", "root", "");
                 $stmt = $pdo->query("SELECT id, fname, lname, email FROM students WHERE id NOT IN (SELECT student_id FROM room_occupancy WHERE status = 'active') ORDER BY lname ASC");
                 while($student = $stmt->fetch(PDO::FETCH_ASSOC)) {
                   echo "<option value='{$student['id']}'>{$student['lname']}, {$student['fname']} ({$student['email']})</option>";

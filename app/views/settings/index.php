@@ -22,62 +22,12 @@ if (session_status() === PHP_SESSION_NONE) session_start();
   #sidebar.collapsed nav a { justify-content: center; }
   #sidebar:hover.collapsed { width: 16rem; }
   
-  /* Dark mode styles */
-  .dark #sidebar {
-    background: #1a1a1a;
-  }
-  .dark body {
-    background: #111111 !important;
-  }
-  .dark .main-content {
-    background: #1a1a1a;
-    color: #e5e5e5;
-  }
-  .dark .settings-card {
-    background: #2a2a2a !important;
-    border-color: #404040 !important;
-  }
-  .dark input, .dark select {
-    background: #333333 !important;
-    border-color: #555555 !important;
-    color: #e5e5e5 !important;
-  }
-  .dark h1, .dark h2, .dark label {
-    color: #e5e5e5 !important;
-  }
-  .dark #sidebar a {
-    color: #e5e5e5 !important;
-  }
 </style>
 </head>
-<body class="bg-[#FFF5E1] font-sans flex min-h-screen transition-colors" id="mainBody">
+<body class="bg-[#FFF5E1] font-sans flex min-h-screen" id="mainBody">
 
 <!-- Sidebar -->
-<div id="sidebar" class="text-[#5C4033] w-64 min-h-screen p-6 fixed left-0 top-0 z-50 shadow-lg">
-  <h2 class="text-2xl font-bold mb-8">🏨</h2>
-  <nav class="flex flex-col gap-4">
-    <a href="<?= site_url('dashboard') ?>" class="flex items-center gap-2 px-4 py-2 rounded hover:bg-[#C19A6B] transition">
-      <i class="fa-solid fa-chart-line"></i> <span>Dashboard</span>
-    </a>
-    <a href="<?= site_url('users') ?>" class="flex items-center gap-2 px-4 py-2 rounded hover:bg-[#C19A6B] transition">
-      <i class="fa-solid fa-user"></i> <span>Users</span>
-    </a>
-<a href="<?=site_url('admin/landing')?>" class="flex items-center gap-2 px-4 py-2 rounded hover:bg-[#C19A6B] transition">
-    <i class="fa-solid fa-list-check"></i> <span>Reservations</span>
-</a>
-
-
-    <a href="<?= site_url('rooms') ?>" class="flex items-center gap-2 px-4 py-2 rounded hover:bg-[#C19A6B] transition">
-      <i class="fa-solid fa-bed"></i> <span>Rooms</span>
-    </a>
-    <a href="<?= site_url('settings') ?>" class="flex items-center gap-2 px-4 py-2 rounded bg-[#C19A6B] text-white transition">
-      <i class="fa-solid fa-cog"></i> <span>Settings</span>
-    </a>
-    <a href="#" onclick="confirmLogout()" class="flex items-center gap-2 px-4 py-2 rounded hover:bg-red-400 transition mt-6">
-      <i class="fa-solid fa-right-from-bracket"></i> <span>Logout</span>
-    </a>
-  </nav>
-</div>
+<?php include __DIR__ . '/../includes/sidebar.php'; ?>
 
 <!-- Main Content -->
 <div class="flex-1 ml-64 p-8 main-content" id="mainContent">
@@ -85,9 +35,6 @@ if (session_status() === PHP_SESSION_NONE) session_start();
   <div class="flex items-center justify-between mb-8">
     <h1 class="text-3xl font-bold text-[#5C4033]">Settings</h1>
     <div class="flex items-center gap-4">
-      <button id="darkModeToggle" class="p-2 rounded-lg border border-[#C19A6B] hover:bg-[#C19A6B] hover:text-white transition">
-        <i class="fa-solid fa-moon" id="darkModeIcon"></i>
-      </button>
       <button id="menuBtn" class="md:hidden text-[#5C4033] text-2xl">
         <i class="fa-solid fa-bars"></i>
       </button>
@@ -112,22 +59,6 @@ if (session_status() === PHP_SESSION_NONE) session_start();
       </div>
 
       <div>
-        <label class="text-[#5C4033] font-semibold mb-1 block">Dark Mode (Admin)</label>
-        <select name="dark_mode_admin" class="w-full px-4 py-2 border border-[#C19A6B] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C19A6B]">
-          <option value="0" <?= (isset($settings['dark_mode_admin']) && $settings['dark_mode_admin'] == 0) ? 'selected' : '' ?>>Light Mode</option>
-          <option value="1" <?= (isset($settings['dark_mode_admin']) && $settings['dark_mode_admin'] == 1) ? 'selected' : '' ?>>Dark Mode</option>
-        </select>
-      </div>
-
-      <div>
-        <label class="text-[#5C4033] font-semibold mb-1 block">Dark Mode (User)</label>
-        <select name="dark_mode_user" class="w-full px-4 py-2 border border-[#C19A6B] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C19A6B]">
-          <option value="0" <?= (isset($settings['dark_mode_user']) && $settings['dark_mode_user'] == 0) ? 'selected' : '' ?>>Light Mode</option>
-          <option value="1" <?= (isset($settings['dark_mode_user']) && $settings['dark_mode_user'] == 1) ? 'selected' : '' ?>>Dark Mode</option>
-        </select>
-      </div>
-
-      <div>
         <label class="text-[#5C4033] font-semibold mb-1 block">Maintenance Mode</label>
         <select name="maintenance_mode" class="w-full px-4 py-2 border border-[#C19A6B] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C19A6B]">
           <option value="0" <?= (isset($settings['maintenance_mode']) && $settings['maintenance_mode'] == 0) ? 'selected' : '' ?>>Off</option>
@@ -147,39 +78,9 @@ if (session_status() === PHP_SESSION_NONE) session_start();
 // Sidebar toggle for mobile
 const sidebar = document.getElementById('sidebar');
 const menuBtn = document.getElementById('menuBtn');
-menuBtn.addEventListener('click', () => sidebar.classList.toggle('-translate-x-full'));
-
-// Dark mode functionality
-const darkModeToggle = document.getElementById('darkModeToggle');
-const darkModeIcon = document.getElementById('darkModeIcon');
-const mainBody = document.getElementById('mainBody');
-
-// Check for saved dark mode preference
-const isDarkMode = localStorage.getItem('adminDarkMode') === 'true';
-if (isDarkMode) {
-    mainBody.classList.add('dark');
-    darkModeIcon.className = 'fa-solid fa-sun';
+if (menuBtn && sidebar) {
+  menuBtn.addEventListener('click', () => sidebar.classList.toggle('-translate-x-full'));
 }
-
-darkModeToggle.addEventListener('click', () => {
-    mainBody.classList.toggle('dark');
-    const isDark = mainBody.classList.contains('dark');
-    
-    // Save preference
-    localStorage.setItem('adminDarkMode', isDark);
-    
-    // Update icon
-    darkModeIcon.className = isDark ? 'fa-solid fa-sun' : 'fa-solid fa-moon';
-    
-    // Update database setting via AJAX
-    fetch(window.location.href, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        body: 'dark_mode_admin=' + (isDark ? '1' : '0') + '&ajax=1'
-    });
-});
 
 // Handle form submission with loading state
 document.addEventListener('DOMContentLoaded', function() {

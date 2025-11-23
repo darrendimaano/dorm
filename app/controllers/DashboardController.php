@@ -74,6 +74,12 @@ class DashboardController extends Controller {
             $totalRooms = $data['totalRooms'];
             $availableRooms = $data['availableRooms'];
             $adminNotifications = $data['adminNotifications'];
+            $roomsAvailability = $data['roomsAvailability'];
+            $usersPerMonth = $data['usersPerMonth'];
+            $totalUsers = $data['totalUsers'];
+            $totalRooms = $data['totalRooms'];
+            $availableRooms = $data['availableRooms'];
+            $adminNotifications = $data['adminNotifications'];
             require $dashboardView;
         } else {
             echo "Dashboard view not found!";

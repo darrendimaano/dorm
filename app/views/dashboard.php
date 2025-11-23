@@ -12,10 +12,11 @@ $rooms = [];
 foreach ($roomsAvailability as $roomNumber => $available) {
     $rooms[] = ['room_number' => $roomNumber, 'available' => $available];
 }
+$darkModeEnabled = false;
 ?>
 
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="<?= $darkModeEnabled ? 'dark' : '' ?>">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -97,44 +98,16 @@ foreach ($roomsAvailability as $roomNumber => $available) {
   }
 </style>
 </head>
-<body class="bg-[#FFF5E1] font-sans flex">
+<body class="bg-[#FFF5E1] font-sans flex<?= $darkModeEnabled ? ' dark' : '' ?>">
 
 <!-- Sidebar -->
-<div id="sidebar" class="text-[#5C4033] w-64 min-h-screen p-6 fixed left-0 top-0 z-50 shadow-lg">
-  <h2 class="text-2xl font-bold mb-8">🏨</h2>
-  <nav class="flex flex-col gap-4">
-    <a href="<?= site_url('dashboard') ?>" class="flex items-center gap-2 px-4 py-2 rounded hover:bg-[#C19A6B] transition">
-      <i class="fa-solid fa-chart-line"></i> <span>Dashboard</span>
-    </a>
-    <a href="<?= site_url('users') ?>" class="flex items-center gap-2 px-4 py-2 rounded hover:bg-[#C19A6B] transition">
-      <i class="fa-solid fa-user"></i> <span>Users</span>
-    </a>
-    <a href="<?= site_url('rooms') ?>" class="flex items-center gap-2 px-4 py-2 rounded hover:bg-[#C19A6B] transition">
-      <i class="fa-solid fa-bed"></i> <span>Rooms</span>
-    </a>
-    <a href="<?= site_url('admin/reservations') ?>" class="flex items-center gap-2 px-4 py-2 rounded hover:bg-[#C19A6B] transition">
-      <i class="fa-solid fa-list-check"></i> <span>Reservations</span>
-    </a>
-    <a href="<?= site_url('admin/reports') ?>" class="flex items-center gap-2 px-4 py-2 rounded hover:bg-[#C19A6B] transition">
-      <i class="fa-solid fa-file-chart-line"></i> <span>Tenant Reports</span>
-    </a>
-    <a href="<?= site_url('settings') ?>" class="flex items-center gap-2 px-4 py-2 rounded hover:bg-[#C19A6B] transition">
-      <i class="fa-solid fa-cog"></i> <span>Settings</span>
-    </a>
-    <a href="<?= site_url('auth/logout') ?>" class="flex items-center gap-2 px-4 py-2 rounded hover:bg-red-300 transition mt-6">
-      <i class="fa-solid fa-right-from-bracket"></i> <span>Logout</span>
-    </a>
-  </nav>
-</div>
+<?php include __DIR__ . '/includes/sidebar.php'; ?>
 
 <!-- Main Content -->
 <div class="flex-1 ml-64 px-2 py-2 main-content">
 
     <div class="flex items-center justify-between mb-4">
         <h1 class="text-3xl font-bold text-[#5C4033]">Admin Dashboard</h1>
-        <button id="darkModeToggle" class="p-2 rounded-lg border border-[#C19A6B] hover:bg-[#C19A6B] hover:text-white transition">
-            <i class="fa-solid fa-moon" id="darkModeIcon"></i>
-        </button>
     </div>
 
     <!-- Stats Cards -->
@@ -313,49 +286,7 @@ foreach ($roomsAvailability as $roomNumber => $available) {
             </div>
         </div>
         
-        <!-- Quick Payment Actions -->
-        <div class="bg-white p-4 rounded-xl shadow border border-[#C19A6B] card lg:col-span-2 xl:col-span-2 2xl:col-span-3 card-modern">
-            <h2 class="text-sm font-semibold text-[#5C4033] mb-3 flex items-center gap-2">
-                <i class="fa-solid fa-peso-sign text-[#C19A6B]"></i>
-                Payment Summary
-            </h2>
-            
-            <div class="space-y-2">
-                <div class="flex items-center justify-between p-2 bg-[#FFF5E1] rounded-lg border border-[#E5D3B3]">
-                    <div class="flex items-center gap-2">
-                        <div class="w-2 h-2 bg-green-500 rounded-full"></div>
-                        <span class="text-xs font-medium text-[#5C4033]">Paid This Month</span>
-                    </div>
-                    <span class="text-sm font-bold text-green-600">₱0.00</span>
-                </div>
-                
-                <div class="flex items-center justify-between p-2 bg-[#FFF5E1] rounded-lg border border-[#E5D3B3]">
-                    <div class="flex items-center gap-2">
-                        <div class="w-2 h-2 bg-yellow-500 rounded-full"></div>
-                        <span class="text-xs font-medium text-[#5C4033]">Due Soon</span>
-                    </div>
-                    <span class="text-sm font-bold text-yellow-600">₱0.00</span>
-                </div>
-                
-                <div class="flex items-center justify-between p-2 bg-[#FFF5E1] rounded-lg border border-[#E5D3B3]">
-                    <div class="flex items-center gap-2">
-                        <div class="w-2 h-2 bg-red-500 rounded-full"></div>
-                        <span class="text-xs font-medium text-[#5C4033]">Overdue</span>
-                    </div>
-                    <span class="text-sm font-bold text-red-600">₱0.00</span>
-                </div>
-            </div>
-            
-            <div class="mt-3 flex gap-1">
-                <a href="<?= site_url('admin/reports') ?>" class="flex-1 px-2 py-1 bg-[#C19A6B] text-white rounded-lg hover:bg-[#A67C52] transition-all duration-200 text-xs font-medium text-center">
-                    <i class="fa-solid fa-chart-bar mr-1"></i>
-                    Reports
-                </a>
-                <button onclick="window.location.reload()" class="px-2 py-1 border border-[#C19A6B] text-[#5C4033] rounded-lg hover:bg-[#C19A6B] hover:text-white transition-all duration-200 text-xs font-medium">
-                    <i class="fa-solid fa-refresh"></i>
-                </button>
-            </div>
-        </div>
+        <!-- Quick Payment Actions removed (metrics available in Tenant Reports) -->
     </div>
 
     <!-- Rooms Table -->
@@ -448,44 +379,6 @@ const roomsChart = new Chart(document.getElementById('roomsChart'), {
 </script>
 
 <script>
-// Dark mode functionality
-function initDarkMode() {
-    const darkModeToggle = document.getElementById("darkModeToggle");
-    const darkModeIcon = document.getElementById("darkModeIcon");
-    const mainBody = document.body;
-    
-    if (!darkModeToggle) return;
-    
-    // Check for saved dark mode preference
-    const isDarkMode = localStorage.getItem("adminDarkMode") === "true";
-    if (isDarkMode) {
-        mainBody.classList.add("dark");
-        if(darkModeIcon) darkModeIcon.className = "fa-solid fa-sun";
-    }
-    
-    darkModeToggle.addEventListener("click", () => {
-        mainBody.classList.toggle("dark");
-        const isDark = mainBody.classList.contains("dark");
-        
-        // Save preference
-        localStorage.setItem("adminDarkMode", isDark);
-        
-        // Update icon
-        if(darkModeIcon) {
-            darkModeIcon.className = isDark ? "fa-solid fa-sun" : "fa-solid fa-moon";
-        }
-        
-        // Update database setting via AJAX
-        fetch("<?= site_url('settings/update') ?>", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/x-www-form-urlencoded",
-            },
-            body: "dark_mode_admin=" + (isDark ? "1" : "0") + "&ajax=1"
-        });
-    });
-}
-
 // Payment reminder functionality
 function runPaymentCheck() {
     const button = document.querySelector('button[onclick="runPaymentCheck()"]');
@@ -521,13 +414,6 @@ function runPaymentCheck() {
         button.innerHTML = originalText;
         button.disabled = false;
     });
-}
-
-// Initialize when DOM is ready
-if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", initDarkMode);
-} else {
-    initDarkMode();
 }
 </script>
 

@@ -1,10 +1,11 @@
 <?php
 defined('PREVENT_DIRECT_ACCESS') OR exit('No direct script access allowed');
 if(session_status() === PHP_SESSION_NONE) session_start();
+$darkModeEnabled = false;
 ?>
 
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="<?= $darkModeEnabled ? 'dark' : '' ?>">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -29,48 +30,40 @@ if(session_status() === PHP_SESSION_NONE) session_start();
   body {
     background: linear-gradient(135deg, #FFF5E1 0%, #F5E6D3 100%);
   }
+
+  .dark body {
+    background: #111111 !important;
+    color: #e5e5e5 !important;
+  }
+  .dark #sidebar {
+    background: #1a1a1a !important;
+  }
+  .dark [class*="bg-white"], .dark [class*="bg-[#FFF5E1]"] {
+    background: #1f1f1f !important;
+  }
+  .dark [class*="border-[#C19A6B]"], .dark [class*="border-[#E5D3B3]"] {
+    border-color: #3a3a3a !important;
+  }
+  .dark [class*="text-[#5C4033]"],
+  .dark [class*="text-gray-600"],
+  .dark [class*="text-gray-500"],
+  .dark [class*="text-gray-400"] {
+    color: #e5e5e5 !important;
+  }
+  .dark [class*="text-green-800"],
+  .dark [class*="text-yellow-800"],
+  .dark [class*="text-red-800"] {
+    color: #d1fae5 !important;
+  }
+  .dark .shadow-md, .dark .shadow-lg, .dark .shadow-sm {
+    box-shadow: 0 12px 30px rgba(0,0,0,0.45) !important;
+  }
 </style>
 </head>
-<body class="font-sans flex min-h-screen">
+<body class="font-sans flex min-h-screen<?= $darkModeEnabled ? ' dark' : '' ?>">
 
 <!-- Sidebar -->
-<div id="sidebar" class="text-[#5C4033] w-64 min-h-screen p-6 fixed left-0 top-0 z-40 shadow-lg">
-  <div class="flex items-center gap-3 mb-8">
-    <div class="bg-[#C19A6B] p-2 rounded-lg">
-      <i class="fa-solid fa-graduation-cap text-2xl text-white"></i>
-    </div>
-    <div>
-      <h2 class="text-lg font-bold"><?= htmlspecialchars($_SESSION['user_name'] ?? 'Tenant') ?></h2>
-      <p class="text-sm text-[#5C4033] opacity-75">Tenant Portal</p>
-    </div>
-  </div>
-  
-  <nav class="flex flex-col gap-2">
-    <a href="<?= site_url('user_landing') ?>" class="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-[#C19A6B] hover:text-white transition">
-      <i class="fa-solid fa-home"></i> <span>Dashboard</span>
-    </a>
-    <a href="<?= site_url('user/reservations') ?>" class="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-[#C19A6B] hover:text-white transition">
-      <i class="fa-solid fa-list-check"></i> <span>My Reservations</span>
-    </a>
-    <a href="<?= site_url('user/payments') ?>" class="flex items-center gap-3 px-4 py-3 rounded-lg bg-[#C19A6B] text-white font-semibold">
-      <i class="fa-solid fa-credit-card"></i> <span>Payment History</span>
-    </a>
-    <a href="<?= site_url('user/profile') ?>" class="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-[#C19A6B] hover:text-white transition">
-      <i class="fa-solid fa-user"></i> <span>Profile</span>
-    </a>
-    <a href="<?= site_url('user/contact') ?>" class="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-[#C19A6B] hover:text-white transition">
-      <i class="fa-solid fa-envelope"></i> <span>Contact Admin</span>
-    </a>
-    <hr class="border-[#5C4033] border-opacity-20 my-4">
-    <div class="px-4 py-2 text-xs text-[#5C4033] opacity-75">
-      <i class="fa-solid fa-phone mr-2"></i>
-      <span>Contact: 09517394938</span>
-    </div>
-    <a href="#" onclick="confirmLogout()" class="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-red-400 hover:text-white transition">
-      <i class="fa-solid fa-right-from-bracket"></i> <span>Logout</span>
-    </a>
-  </nav>
-</div>
+<?php include __DIR__ . '/includes/sidebar.php'; ?>
 
 <!-- Main Content -->
 <div class="flex-1 ml-64 transition-all duration-300" id="mainContent">
@@ -83,9 +76,11 @@ if(session_status() === PHP_SESSION_NONE) session_start();
       <h1 class="font-bold text-xl text-[#5C4033]">Payment History</h1>
       <p class="text-[#5C4033] opacity-75 text-sm">Track your rent payments and receipts</p>
     </div>
-    <div class="text-xs text-[#5C4033] opacity-75">
-      <i class="fa-solid fa-phone mr-1"></i>
-      09517394938
+    <div class="flex items-center gap-4 flex-wrap justify-end">
+      <div class="flex items-center gap-2 text-xs text-[#5C4033] opacity-75 dark:text-gray-300 dark:opacity-100">
+        <i class="fa-solid fa-phone"></i>
+        <span>09517394938</span>
+      </div>
     </div>
   </div>
 
@@ -382,13 +377,9 @@ if(session_status() === PHP_SESSION_NONE) session_start();
               </td>
               <td class="px-6 py-4 whitespace-nowrap text-sm">
                 <div class="flex items-center gap-2">
-                  <a href="<?= site_url('user/payments/receipt/'.$payment['id']) ?>" 
+                  <a href="<?= site_url('user/payments/receipt-page/'.$payment['id']) ?>" 
                      class="text-[#C19A6B] hover:text-[#5C4033] font-medium">
-                    <i class="fa-solid fa-eye"></i> View
-                  </a>
-                  <a href="<?= site_url('user/payments/download_receipt/'.$payment['id']) ?>" 
-                     class="text-[#C19A6B] hover:text-[#5C4033] font-medium">
-                    <i class="fa-solid fa-download"></i> Download
+                    <i class="fa-solid fa-eye"></i> View Receipt
                   </a>
                 </div>
               </td>
@@ -484,34 +475,33 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 // Mobile menu toggle
-document.getElementById('mobileMenuToggle').addEventListener('click', function() {
+const mobileMenuToggle = document.getElementById('mobileMenuToggle');
+const mobileMenuOverlay = document.getElementById('mobileMenuOverlay');
+
+if (mobileMenuToggle && mobileMenuOverlay) {
+  mobileMenuToggle.addEventListener('click', function() {
     const sidebar = document.getElementById('sidebar');
-    const overlay = document.getElementById('mobileMenuOverlay');
-    
     sidebar.classList.toggle('open');
-    overlay.classList.toggle('hidden');
-});
+    mobileMenuOverlay.classList.toggle('hidden');
+  });
 
-document.getElementById('mobileMenuOverlay').addEventListener('click', function() {
+  mobileMenuOverlay.addEventListener('click', function() {
     const sidebar = document.getElementById('sidebar');
-    const overlay = document.getElementById('mobileMenuOverlay');
-    
     sidebar.classList.remove('open');
-    overlay.classList.add('hidden');
-});
+    mobileMenuOverlay.classList.add('hidden');
+  });
 
-// Close mobile menu when clicking on a link
-document.querySelectorAll('#sidebar a').forEach(link => {
+  // Close mobile menu when clicking on a link
+  document.querySelectorAll('#sidebar a').forEach(link => {
     link.addEventListener('click', function() {
+      if (window.innerWidth < 768) {
         const sidebar = document.getElementById('sidebar');
-        const overlay = document.getElementById('mobileMenuOverlay');
-        
-        if (window.innerWidth < 768) {
-            sidebar.classList.remove('open');
-            overlay.classList.add('hidden');
-        }
+        sidebar.classList.remove('open');
+        mobileMenuOverlay.classList.add('hidden');
+      }
     });
-});
+  });
+}
 
 // Custom logout confirmation modal
 function confirmLogout() {

@@ -1,10 +1,11 @@
 <?php
 defined('PREVENT_DIRECT_ACCESS') OR exit('No direct script access allowed');
 if(session_status() === PHP_SESSION_NONE) session_start();
+$darkModeEnabled = false;
 ?>
 
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="<?= $darkModeEnabled ? 'dark' : '' ?>">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -29,48 +30,38 @@ if(session_status() === PHP_SESSION_NONE) session_start();
   body {
     background: linear-gradient(135deg, #FFF5E1 0%, #F5E6D3 100%);
   }
+
+  .dark body {
+    background: #111111 !important;
+    color: #e5e5e5 !important;
+  }
+  .dark #sidebar {
+    background: #1a1a1a !important;
+  }
+  .dark [class*="bg-white"], .dark [class*="bg-[#FFF5E1]"] {
+    background: #1f1f1f !important;
+  }
+  .dark [class*="border-[#C19A6B]"], .dark [class*="border-[#E5D3B3]"], .dark [class*="border-blue-200"] {
+    border-color: #3a3a3a !important;
+  }
+  .dark [class*="text-[#5C4033]"],
+  .dark [class*="text-gray-600"],
+  .dark [class*="text-gray-500"],
+  .dark [class*="text-gray-400"] {
+    color: #e5e5e5 !important;
+  }
+  .dark [class*="text-blue-700"], .dark [class*="text-blue-800"] {
+    color: #93c5fd !important;
+  }
+  .dark .shadow-md, .dark .shadow-lg, .dark .shadow-sm {
+    box-shadow: 0 10px 30px rgba(0,0,0,0.4) !important;
+  }
 </style>
 </head>
-<body class="font-sans flex min-h-screen">
+<body class="font-sans flex min-h-screen<?= $darkModeEnabled ? ' dark' : '' ?>">
 
 <!-- Sidebar -->
-<div id="sidebar" class="text-[#5C4033] w-64 min-h-screen p-6 fixed left-0 top-0 z-40 shadow-lg">
-  <div class="flex items-center gap-3 mb-8">
-    <div class="bg-[#C19A6B] p-2 rounded-lg">
-      <i class="fa-solid fa-graduation-cap text-2xl text-white"></i>
-    </div>
-    <div>
-      <h2 class="text-lg font-bold"><?= htmlspecialchars($_SESSION['user_name'] ?? 'Tenant') ?></h2>
-      <p class="text-sm text-[#5C4033] opacity-75">Tenant Portal</p>
-    </div>
-  </div>
-  
-  <nav class="flex flex-col gap-2">
-    <a href="<?= site_url('user_landing') ?>" class="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-[#C19A6B] hover:text-white transition">
-      <i class="fa-solid fa-home"></i> <span>Dashboard</span>
-    </a>
-    <a href="<?= site_url('user/reservations') ?>" class="flex items-center gap-3 px-4 py-3 rounded-lg bg-[#C19A6B] text-white font-semibold">
-      <i class="fa-solid fa-list-check"></i> <span>My Reservations</span>
-    </a>
-    <a href="<?= site_url('user/payments') ?>" class="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-[#C19A6B] hover:text-white transition">
-      <i class="fa-solid fa-credit-card"></i> <span>Payment History</span>
-    </a>
-    <a href="<?= site_url('user/profile') ?>" class="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-[#C19A6B] hover:text-white transition">
-      <i class="fa-solid fa-user"></i> <span>Profile</span>
-    </a>
-    <a href="<?= site_url('user/contact') ?>" class="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-[#C19A6B] hover:text-white transition">
-      <i class="fa-solid fa-envelope"></i> <span>Contact Admin</span>
-    </a>
-    <hr class="border-[#5C4033] border-opacity-20 my-4">
-    <div class="px-4 py-2 text-xs text-[#5C4033] opacity-75">
-      <i class="fa-solid fa-phone mr-2"></i>
-      <span>Contact: 09517394938</span>
-    </div>
-    <a href="#" onclick="confirmLogout()" class="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-red-400 hover:text-white transition">
-      <i class="fa-solid fa-right-from-bracket"></i> <span>Logout</span>
-    </a>
-  </nav>
-</div>
+<?php include __DIR__ . '/includes/sidebar.php'; ?>
 
 <!-- Main Content -->
 <div class="flex-1 ml-64 transition-all duration-300" id="mainContent">
@@ -83,15 +74,48 @@ if(session_status() === PHP_SESSION_NONE) session_start();
       <h1 class="font-bold text-xl text-[#5C4033]">My Reservations</h1>
       <p class="text-[#5C4033] opacity-75 text-sm">Track your room reservation requests</p>
     </div>
-    <div class="flex items-center gap-4">
-      <div class="text-xs text-[#5C4033] opacity-75">
-        <i class="fa-solid fa-phone mr-1"></i>
-        09517394938
+    <div class="flex items-center gap-4 flex-wrap justify-end">
+      <div class="flex items-center gap-2 text-xs text-[#5C4033] opacity-75 dark:text-gray-300 dark:opacity-100">
+        <i class="fa-solid fa-phone"></i>
+        <span>09517394938</span>
       </div>
     </div>
   </div>
 
   <div class="w-full px-4 py-4">
+
+    <?php
+      $totalReserved = 0;
+      $totalApproved = 0;
+      $totalAmount = 0.0;
+      if(!empty($reservations)) {
+          foreach($reservations as $reservation) {
+              $payment = isset($reservation['payment']) ? (float) $reservation['payment'] : 0.0;
+              $totalAmount += $payment;
+              $totalReserved++;
+              if(($reservation['status'] ?? '') === 'approved') {
+                  $totalApproved++;
+              }
+          }
+      }
+    ?>
+
+    <?php if($totalReserved > 0): ?>
+      <div class="mb-6 grid gap-4 grid-cols-1 md:grid-cols-3">
+        <div class="rounded-xl border border-[#C19A6B] bg-[#FFF5E1] p-4 shadow-sm">
+          <p class="text-xs uppercase tracking-wide text-[#5C4033] opacity-70">Total Reservations</p>
+          <p class="mt-2 text-2xl font-bold text-[#5C4033]"><?= $totalReserved; ?></p>
+        </div>
+        <div class="rounded-xl border border-green-300 bg-green-50 p-4 shadow-sm">
+          <p class="text-xs uppercase tracking-wide text-green-700 opacity-70">Approved Slots</p>
+          <p class="mt-2 text-2xl font-bold text-green-700"><?= $totalApproved; ?></p>
+        </div>
+        <div class="rounded-xl border border-[#C19A6B] bg-white p-4 shadow-sm">
+          <p class="text-xs uppercase tracking-wide text-[#5C4033] opacity-70">Monthly Total Reserved</p>
+          <p class="mt-2 text-2xl font-bold text-[#5C4033]">₱<?= number_format($totalAmount, 2); ?></p>
+        </div>
+      </div>
+    <?php endif; ?>
     
     <!-- Success / Error Messages -->
     <?php if(!empty($success)): ?>
@@ -139,6 +163,13 @@ if(session_status() === PHP_SESSION_NONE) session_start();
                     <span class="font-medium">Request ID:</span> #<?= $reservation['id'] ?>
                   </div>
                 </div>
+
+                <?php if(isset($reservation['payment']) && (float)$reservation['payment'] > 0): ?>
+                  <div class="mt-2 inline-flex items-center gap-2 rounded-full bg-[#C19A6B] bg-opacity-10 px-3 py-1 text-xs font-semibold text-[#5C4033]">
+                    <i class="fa-solid fa-sack-dollar"></i>
+                    Monthly Due: ₱<?= number_format($reservation['payment'], 2) ?>
+                  </div>
+                <?php endif; ?>
 
                 <!-- Status Description -->
                 <div class="mt-3 p-3 rounded-lg <?= $reservation['status'] == 'approved' ? 'bg-green-50' : 

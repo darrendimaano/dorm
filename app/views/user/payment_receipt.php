@@ -1,10 +1,16 @@
 <?php
 defined('PREVENT_DIRECT_ACCESS') OR exit('No direct script access allowed');
 if(session_status() === PHP_SESSION_NONE) session_start();
+$darkModeEnabled = false;
+
+$stayStartDisplay = !empty($payment['stay_start_date']) ? date('M j, Y', strtotime($payment['stay_start_date'])) : null;
+$stayEndDisplay = !empty($payment['stay_end_date']) ? date('M j, Y', strtotime($payment['stay_end_date'])) : null;
+$monthlyDueDisplay = !empty($payment['monthly_due_date']) ? date('M j, Y', strtotime($payment['monthly_due_date'])) : null;
+$lastPaymentDisplay = !empty($payment['last_payment_date']) ? date('M j, Y', strtotime($payment['last_payment_date'])) : null;
 ?>
 
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="<?= $darkModeEnabled ? 'dark' : '' ?>">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -15,6 +21,25 @@ if(session_status() === PHP_SESSION_NONE) session_start();
   body {
     background: linear-gradient(135deg, #FFF5E1 0%, #F5E6D3 100%);
   }
+  .dark body {
+    background: #111111 !important;
+    color: #e5e5e5 !important;
+  }
+  .dark [class*="bg-white"], .dark [class*="bg-[#FFF5E1]"] {
+    background: #1f1f1f !important;
+  }
+  .dark [class*="border-[#E5D3B3]"] {
+    border-color: #3a3a3a !important;
+  }
+  .dark [class*="text-[#5C4033]"],
+  .dark [class*="text-gray-600"],
+  .dark [class*="text-gray-500"] {
+    color: #e5e5e5 !important;
+  }
+  .dark [class*="text-yellow-700"], .dark [class*="text-yellow-800"] {
+    color: #fde68a !important;
+  }
+  .dark .bg-yellow-50 { background: #3a2f1a !important; }
   @media print {
     body { background: white !important; }
     .no-print { display: none !important; }
@@ -22,27 +47,25 @@ if(session_status() === PHP_SESSION_NONE) session_start();
   }
 </style>
 </head>
-<body class="font-sans">
+<body class="font-sans<?= $darkModeEnabled ? ' dark' : '' ?>">
 
 <div class="min-h-screen p-6">
   <div class="w-full px-4">
     
     <!-- Header Actions -->
-    <div class="flex items-center justify-between mb-6 no-print">
+    <div class="flex items-center justify-between mb-6 no-print flex-wrap gap-4">
       <a href="<?= site_url('user/payments') ?>" 
          class="flex items-center gap-2 text-[#C19A6B] hover:text-[#5C4033] font-semibold">
         <i class="fa-solid fa-arrow-left"></i>
         Back to Payment History
       </a>
-      <div class="flex gap-3">
+      <div class="flex items-center gap-4">
+        <div class="flex gap-3">
         <button onclick="window.print()" 
                 class="bg-[#C19A6B] hover:bg-[#5C4033] text-white px-4 py-2 rounded-lg font-semibold transition">
           <i class="fa-solid fa-print"></i> Print Receipt
         </button>
-        <a href="<?= site_url('user/payments/download_receipt/'.$payment['id']) ?>" 
-           class="bg-[#5C4033] hover:bg-[#4A2C1D] text-white px-4 py-2 rounded-lg font-semibold transition">
-          <i class="fa-solid fa-download"></i> Download CSV
-        </a>
+        </div>
       </div>
     </div>
 
@@ -124,8 +147,13 @@ if(session_status() === PHP_SESSION_NONE) session_start();
               <div>
                 <p class="text-sm text-gray-600">Stay Period</p>
                 <p class="font-semibold text-[#5C4033]">
-                  <?= date('M j, Y', strtotime($payment['stay_start_date'])) ?> - 
-                  <?= date('M j, Y', strtotime($payment['stay_end_date'])) ?>
+                  <?php if ($stayStartDisplay && $stayEndDisplay): ?>
+                    <?= htmlspecialchars($stayStartDisplay) ?> - <?= htmlspecialchars($stayEndDisplay) ?>
+                  <?php elseif ($stayStartDisplay): ?>
+                    <?= htmlspecialchars($stayStartDisplay) ?>
+                  <?php else: ?>
+                    <span class="text-gray-500">Not recorded</span>
+                  <?php endif; ?>
                 </p>
               </div>
             </div>
@@ -149,6 +177,12 @@ if(session_status() === PHP_SESSION_NONE) session_start();
                 <span class="text-gray-600">Payment Method:</span>
                 <span class="font-semibold text-[#5C4033]"><?= htmlspecialchars($payment['payment_method']) ?></span>
               </div>
+              <?php if ($monthlyDueDisplay): ?>
+              <div class="flex justify-between">
+                <span class="text-gray-600">Next Due Date:</span>
+                <span class="font-semibold text-[#5C4033]"><?= htmlspecialchars($monthlyDueDisplay) ?></span>
+              </div>
+              <?php endif; ?>
             </div>
             
             <div class="space-y-3">
@@ -156,6 +190,12 @@ if(session_status() === PHP_SESSION_NONE) session_start();
               <div class="flex justify-between">
                 <span class="text-gray-600">Transaction ID:</span>
                 <span class="font-semibold text-[#5C4033] font-mono text-sm"><?= htmlspecialchars($payment['transaction_reference']) ?></span>
+              </div>
+              <?php endif; ?>
+              <?php if ($lastPaymentDisplay): ?>
+              <div class="flex justify-between">
+                <span class="text-gray-600">Last Payment Date:</span>
+                <span class="font-semibold text-[#5C4033]"><?= htmlspecialchars($lastPaymentDisplay) ?></span>
               </div>
               <?php endif; ?>
               <div class="flex justify-between">
@@ -172,6 +212,25 @@ if(session_status() === PHP_SESSION_NONE) session_start();
             </div>
           </div>
         </div>
+
+        <?php if (!empty($payment['method_summary'])): ?>
+        <div class="bg-green-50 border border-green-200 rounded-lg p-5 mb-6">
+          <h4 class="text-lg font-semibold text-green-800 mb-2 flex items-center gap-2">
+            <i class="fa-solid fa-calendar-check"></i>
+            Payment Confirmation
+          </h4>
+          <p class="text-green-700 font-medium"><?= htmlspecialchars($payment['method_summary']) ?></p>
+          <?php if (!empty($payment['billing_month'])): ?>
+            <div class="inline-flex items-center gap-2 mt-3 px-3 py-1 rounded-full bg-green-100 text-green-800 text-sm font-semibold">
+              <i class="fa-solid fa-calendar"></i>
+              Billing Month: <?= htmlspecialchars($payment['billing_month']) ?>
+            </div>
+          <?php endif; ?>
+          <?php if (!empty($payment['method_details'])): ?>
+            <p class="text-sm text-green-700 mt-3"><?= htmlspecialchars($payment['method_details']) ?></p>
+          <?php endif; ?>
+        </div>
+        <?php endif; ?>
 
         <!-- Notes -->
         <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">

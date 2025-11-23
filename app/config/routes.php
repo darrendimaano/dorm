@@ -19,6 +19,7 @@ $router->post('/user/reserve/3', 'UserLandingController::reserveRoom');
 $router->post('/user/reserve/4', 'UserLandingController::reserveRoom');
 $router->post('/user/reserve/5', 'UserLandingController::reserveRoom');
 $router->post('/user/reserve/(:num)', 'UserLandingController::reserveRoom');
+$router->post('/user/reserve', 'UserLandingController::reserveRoom');
 $router->get('/user/reserve/(:num)', 'UserLandingController::redirectToLanding');
 $router->get('/user/profile', 'UserLandingController::profile');
 $router->post('/user/profile/update', 'UserLandingController::updateProfile');
@@ -29,8 +30,8 @@ $router->post('/user/contact/send', 'UserLandingController::sendMessage');
 /* -------------------- User Payment Routes -------------------- */
 $router->get('/user/payments', 'UserPaymentController::index');
 $router->post('/user/payments/submit', 'UserPaymentController::submit');
-$router->get('/user/payments/receipt/(:num)', 'UserPaymentController::receipt');
-$router->get('/user/payments/download_receipt/(:num)', 'UserPaymentController::download_receipt');
+$router->get('/user/payments/receipt-page/{payment}', 'UserPaymentController::receiptPage')->where_number('payment');
+$router->get('/user/payments/receipt/{payment}', 'UserPaymentController::receipt')->where_number('payment');
 
 /* -------------------- Admin Dashboard Routes -------------------- */
 $router->get('/dashboard', 'DashboardController::index');
@@ -61,17 +62,24 @@ $router->post('/admin/reports/updateStayDates', 'ReportsController::updateStayDa
 $router->get('/admin/reports/payment-history', 'PaymentHistoryController::index');
 $router->get('/admin/reports/payment-history/download-csv', 'PaymentHistoryController::downloadCsv');
 $router->get('/admin/reports/payment-history/download-pdf', 'PaymentHistoryController::downloadPdf');
+$router->post('/admin/reports/payment-history/approve', 'PaymentHistoryController::approve');
+$router->post('/admin/reports/payment-history/reject', 'PaymentHistoryController::reject');
 
 /* -------------------- Console/API Routes -------------------- */
 $router->post('/console/payment_check', 'ConsoleController::payment_check');
 
 $router->get('/admin/messages', 'AdminLandingController::messages');
+$router->post('/admin/messages/reply', 'AdminLandingController::replyMessage');
 $router->post('/admin/messages/reply/(:num)', 'AdminLandingController::replyMessage');
+$router->post('/admin/messages/read', 'AdminLandingController::markMessageAsRead');
+$router->post('/admin/messages/read/(:num)', 'AdminLandingController::markMessageAsRead');
 
 $router->get('/users', 'UsersController::index');
 $router->match('/users/create', 'UsersController::create', ['GET', 'POST']);
 $router->match('/users/update/(:num)', 'UsersController::update', ['GET', 'POST']);
+$router->match('/users/update', 'UsersController::update', ['POST']);
 $router->get('/users/delete/(:num)', 'UsersController::delete');
+$router->match('/users/delete', 'UsersController::delete', ['POST']);
 
 // Tenant Management Routes
 $router->get('/users/tenants', 'UsersController::tenants');
@@ -82,13 +90,17 @@ $router->get('/users/removeTenant/(:num)', 'UsersController::removeTenant');
 $router->get('/rooms', 'RoomsController::index');
 $router->match('/rooms/create', 'RoomsController::create', ['GET', 'POST']);
 $router->match('/rooms/update/(:num)', 'RoomsController::update', ['GET', 'POST']);
+$router->match('/rooms/update', 'RoomsController::update', ['POST']);
 $router->match('/rooms/delete/(:num)', 'RoomsController::delete', ['GET', 'POST']);
+$router->match('/rooms/delete', 'RoomsController::delete', ['POST']);
 
 // Admin Room Management (updated to use RoomsController consistently)
 $router->get('/admin/rooms', 'RoomsController::index');
 $router->match('/admin/rooms/create', 'RoomsController::create', ['GET', 'POST']);
 $router->match('/admin/rooms/update/(:num)', 'RoomsController::update', ['GET', 'POST']);
+$router->match('/admin/rooms/update', 'RoomsController::update', ['POST']);
 $router->match('/admin/rooms/delete/(:num)', 'RoomsController::delete', ['GET', 'POST']);
+$router->match('/admin/rooms/delete', 'RoomsController::delete', ['POST']);
 
 $router->get('/settings', 'SettingsController::index');
 $router->post('/settings/update', 'SettingsController::update');

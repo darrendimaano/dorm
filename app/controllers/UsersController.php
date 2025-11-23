@@ -2,6 +2,7 @@
 defined('PREVENT_DIRECT_ACCESS') OR exit('No direct script access allowed');
 
 require_once __DIR__ . '/../config/DatabaseConfig.php';
+require_once __DIR__ . '/../models/RoomsModel.php';
 
 class UsersController extends Controller {
     public function __construct() {
@@ -10,7 +11,18 @@ class UsersController extends Controller {
     }
 
     public function index() {
-        $data['users'] = $this->UsersModel->All();
+        if(session_status() === PHP_SESSION_NONE) {
+            session_start();
+        }
+
+        $data = [
+            'users' => $this->UsersModel->all(),
+            'success' => $_SESSION['users_success'] ?? '',
+            'error' => $_SESSION['users_error'] ?? ''
+        ];
+
+        unset($_SESSION['users_success'], $_SESSION['users_error']);
+
         $this->call->view('users/index', $data);
     }
 
@@ -35,6 +47,10 @@ class UsersController extends Controller {
             ];
 
             if($this->UsersModel->insert($data)) {
+                if(session_status() === PHP_SESSION_NONE) {
+                    session_start();
+                }
+                $_SESSION['users_success'] = "User created successfully.";
                 redirect(site_url('users'));
             }
         } else {
@@ -42,34 +58,328 @@ class UsersController extends Controller {
         }
     }
 
-    public function update($id) {
-        $user = $this->UsersModel->find($id);
+    public function update($id = null) {
+        if(session_status() === PHP_SESSION_NONE) {
+            session_start();
+        }
+
+        $routeId = (int) $id;
+        $postId = (int) ($this->io->post('id') ?? 0);
+        $targetId = $routeId > 0 ? $routeId : $postId;
+
+        if($targetId <= 0) {
+            $message = 'Missing user identifier.';
+
+            if($this->isAjaxRequest()) {
+                $this->respondJson([
+                    'status' => 'error',
+                    'message' => $message
+                ], 422);
+            }
+
+            $_SESSION['users_error'] = $message;
+            redirect(site_url('users'));
+            return;
+        }
+
+        $user = $this->UsersModel->find($targetId);
         if(!$user) {
-            echo "User not found.";
+            $_SESSION['users_error'] = "User not found.";
+            if($this->isAjaxRequest()) {
+                $this->respondJson([
+                    'status' => 'error',
+                    'message' => 'User not found.'
+                ], 404);
+            }
+            redirect(site_url('users'));
             return;
         }
 
         if($this->io->method() == 'post') {
-            $password = $this->io->post('password');
-            $data = [
-                'fname' => $this->io->post('fname'),
-                'lname' => $this->io->post('lname'),
-                'email' => $this->io->post('email')
-            ];
+            $postData = $this->io->post();
 
-            if(!empty($password)) {
-                $data['password'] = password_hash($password, PASSWORD_DEFAULT);
+            $fromModal = isset($postData['from_modal']) && $postData['from_modal'] === '1';
+            $fullNameInput = isset($postData['full_name']) ? trim((string) $postData['full_name']) : '';
+            $email = isset($postData['email']) ? trim((string) $postData['email']) : '';
+            $fname = isset($postData['fname']) ? trim((string) $postData['fname']) : '';
+            $lname = isset($postData['lname']) ? trim((string) $postData['lname']) : '';
+            $errors = [];
+
+            if($fullNameInput !== '') {
+                $nameParts = preg_split('/\s+/', $fullNameInput);
+                $nameParts = array_filter($nameParts, static function($part) {
+                    return $part !== '';
+                });
+
+                if(count($nameParts) < 2) {
+                    $errors[] = "Please provide full name with first and last name.";
+                } else {
+                    $fname = array_shift($nameParts);
+                    $lname = implode(' ', $nameParts);
+                }
             }
 
-            if($this->UsersModel->update($id, $data)) redirect(site_url('users'));
+            if($fname === '' || $lname === '') {
+                $errors[] = "First name and last name are required.";
+            }
+
+            if($email === '') {
+                $errors[] = "Email address is required.";
+            } elseif(!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                $errors[] = "Please provide a valid email address.";
+            }
+
+            if(empty($errors) && $this->UsersModel->emailExistsForOther($email, $targetId)) {
+                $errors[] = "Email address is already in use.";
+            }
+
+            if(!empty($errors)) {
+                $message = implode(' ', $errors);
+
+                if($fromModal || $this->isAjaxRequest()) {
+                    $_SESSION['users_error'] = $message;
+                    if($this->isAjaxRequest()) {
+                        $this->respondJson([
+                            'status' => 'error',
+                            'message' => $message
+                        ], 422);
+                    }
+                    redirect(site_url('users'));
+                    return;
+                }
+
+                $data['error'] = $message;
+                $data['user'] = $this->UsersModel->find($targetId);
+                $this->call->view('users/update', $data);
+                return;
+            }
+
+            $updateData = [
+                'fname' => $fname,
+                'lname' => $lname,
+                'email' => $email
+            ];
+
+            $result = $this->UsersModel->update($targetId, $updateData);
+
+            if($result === false) {
+                $_SESSION['users_error'] = "Unable to update user at this time.";
+                if($this->isAjaxRequest()) {
+                    $this->respondJson([
+                        'status' => 'error',
+                        'message' => 'Unable to update user at this time.'
+                    ], 500);
+                }
+            } else {
+                $_SESSION['users_success'] = "User updated successfully.";
+                if($this->isAjaxRequest()) {
+                    $updated = $this->UsersModel->find($targetId);
+                    $fullName = trim(($updated['fname'] ?? '') . ' ' . ($updated['lname'] ?? ''));
+
+                    $this->respondJson([
+                        'status' => 'success',
+                        'message' => 'User updated successfully.',
+                        'data' => [
+                            'id' => (int) ($updated['id'] ?? $targetId),
+                            'fname' => (string) ($updated['fname'] ?? $fname),
+                            'lname' => (string) ($updated['lname'] ?? $lname),
+                            'email' => (string) ($updated['email'] ?? $email),
+                            'full_name' => $fullName
+                        ]
+                    ]);
+                }
+            }
+
+            redirect(site_url('users'));
+            return;
         } else {
             $data['user'] = $user;
+            $data['error'] = $_SESSION['users_error'] ?? '';
+            unset($_SESSION['users_error']);
             $this->call->view('users/update', $data);
         }
     }
 
-    public function delete($id) {
-        if($this->UsersModel->delete($id)) redirect(site_url('users'));
+    public function updateAjax() {
+        if(session_status() === PHP_SESSION_NONE) {
+            session_start();
+        }
+
+        if($this->io->method() !== 'post') {
+            $this->respondJson([
+                'status' => 'error',
+                'message' => 'Invalid request method.'
+            ], 405);
+        }
+
+        $id = (int) $this->io->post('id');
+        if($id <= 0) {
+            $this->respondJson([
+                'status' => 'error',
+                'message' => 'Missing user identifier.'
+            ], 422);
+        }
+
+        $user = $this->UsersModel->find($id);
+        if(!$user) {
+            $this->respondJson([
+                'status' => 'error',
+                'message' => 'User not found.'
+            ], 404);
+        }
+
+        $postData = $this->io->post();
+
+        $fullNameInput = isset($postData['full_name']) ? trim((string) $postData['full_name']) : '';
+        $email = isset($postData['email']) ? trim((string) $postData['email']) : '';
+        $fname = isset($postData['fname']) ? trim((string) $postData['fname']) : '';
+        $lname = isset($postData['lname']) ? trim((string) $postData['lname']) : '';
+
+        $errors = [];
+
+        if($fullNameInput !== '') {
+            $nameParts = preg_split('/\s+/', $fullNameInput);
+            $nameParts = array_filter($nameParts, static function($part) {
+                return $part !== '';
+            });
+
+            if(count($nameParts) < 2) {
+                $errors[] = "Please provide full name with first and last name.";
+            } else {
+                $fname = array_shift($nameParts);
+                $lname = implode(' ', $nameParts);
+            }
+        }
+
+        if($fname === '' || $lname === '') {
+            $errors[] = "First name and last name are required.";
+        }
+
+        if($email === '') {
+            $errors[] = "Email address is required.";
+        } elseif(!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            $errors[] = "Please provide a valid email address.";
+        }
+
+        if(empty($errors) && $this->UsersModel->emailExistsForOther($email, $id)) {
+            $errors[] = "Email address is already in use.";
+        }
+
+        if(!empty($errors)) {
+            $this->respondJson([
+                'status' => 'error',
+                'message' => implode(' ', $errors)
+            ], 422);
+        }
+
+        $updateData = [
+            'fname' => $fname,
+            'lname' => $lname,
+            'email' => $email
+        ];
+
+        $result = $this->UsersModel->update($id, $updateData);
+
+        if($result === false) {
+            $this->respondJson([
+                'status' => 'error',
+                'message' => 'Unable to update user at this time.'
+            ], 500);
+        }
+
+        $updated = $this->UsersModel->find($id);
+        $fullName = trim(($updated['fname'] ?? '') . ' ' . ($updated['lname'] ?? ''));
+
+        $_SESSION['users_success'] = "User updated successfully.";
+
+        $this->respondJson([
+            'status' => 'success',
+            'message' => 'User updated successfully.',
+            'data' => [
+                'id' => (int) ($updated['id'] ?? $id),
+                'fname' => (string) ($updated['fname'] ?? $fname),
+                'lname' => (string) ($updated['lname'] ?? $lname),
+                'email' => (string) ($updated['email'] ?? $email),
+                'full_name' => $fullName
+            ]
+        ]);
+    }
+
+    public function delete($id = null) {
+        if(session_status() === PHP_SESSION_NONE) {
+            session_start();
+        }
+
+        $routeId = (int) $id;
+        $postId = (int) ($this->io->post('id') ?? 0);
+        $targetId = $routeId > 0 ? $routeId : $postId;
+
+        if($targetId <= 0) {
+            $message = 'Missing user identifier.';
+
+            if($this->isAjaxRequest()) {
+                $this->respondJson([
+                    'status' => 'error',
+                    'message' => $message
+                ], 422);
+            }
+
+            $_SESSION['users_error'] = $message;
+            redirect(site_url('users'));
+            return;
+        }
+
+        $existingUser = $this->UsersModel->find($targetId);
+        if(!$existingUser) {
+            $message = 'User not found.';
+
+            if($this->isAjaxRequest()) {
+                $this->respondJson([
+                    'status' => 'error',
+                    'message' => $message
+                ], 404);
+            }
+
+            $_SESSION['users_error'] = $message;
+            redirect(site_url('users'));
+            return;
+        }
+
+        $result = $this->UsersModel->delete($targetId);
+
+        if($this->isAjaxRequest()) {
+            if($result === false) {
+                $this->respondJson([
+                    'status' => 'error',
+                    'message' => 'Unable to delete user.'
+                ], 500);
+            }
+
+            $this->respondJson([
+                'status' => 'success',
+                'message' => 'User deleted successfully.',
+                'data' => ['id' => (int) $targetId]
+            ]);
+        }
+
+        if($result === false) {
+            $_SESSION['users_error'] = "Unable to delete user.";
+        } else {
+            $_SESSION['users_success'] = "User deleted successfully.";
+        }
+
+        redirect(site_url('users'));
+    }
+
+    private function isAjaxRequest(): bool {
+        return isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest';
+    }
+
+    private function respondJson(array $payload, int $statusCode = 200): void {
+        http_response_code($statusCode);
+        header('Content-Type: application/json');
+        echo json_encode($payload);
+        exit;
     }
 
     public function tenants() {
@@ -171,6 +481,8 @@ class UsersController extends Controller {
             // Update room availability
             $updateRoom = $pdo->prepare("UPDATE rooms SET available = available - 1 WHERE id = ? AND available > 0");
             $updateRoom->execute([$room_id]);
+
+            // Availability already adjusted with direct SQL update above.
             
             $_SESSION['success'] = "Tenant assigned successfully!";
             
@@ -207,6 +519,8 @@ class UsersController extends Controller {
                 // Update room availability
                 $updateRoom = $pdo->prepare("UPDATE rooms SET available = available + 1 WHERE id = ?");
                 $updateRoom->execute([$occupancy['room_id']]);
+
+                // Availability increment handled via direct UPDATE above.
                 
                 $_SESSION['success'] = "Tenant removed successfully!";
             } else {

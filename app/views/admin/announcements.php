@@ -1,10 +1,11 @@
 <?php
 defined('PREVENT_DIRECT_ACCESS') OR exit('No direct script access allowed');
 if(session_status() === PHP_SESSION_NONE) session_start();
+$darkModeEnabled = false;
 ?>
 
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="<?= $darkModeEnabled ? 'dark' : '' ?>">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -64,58 +65,10 @@ if(session_status() === PHP_SESSION_NONE) session_start();
   }
 </style>
 </head>
-<body class="min-h-screen transition-colors">
+<body class="min-h-screen transition-colors<?= $darkModeEnabled ? ' dark' : '' ?>">
 
 <!-- Sidebar -->
-<div id="sidebar" class="text-[#5C4033] w-64 min-h-screen p-6 fixed left-0 top-0 z-40 shadow-lg">
-  <div class="flex items-center gap-3 mb-8">
-    <div class="bg-[#C19A6B] p-2 rounded-lg">
-      <i class="fa-solid fa-user-shield text-2xl text-white"></i>
-    </div>
-    <div class="sidebar-text">
-      <h2 class="text-lg font-bold"><?= htmlspecialchars($adminName ?? 'Administrator') ?></h2>
-      <p class="text-sm text-[#5C4033] opacity-75">Admin Panel</p>
-    </div>
-  </div>
-  
-  <nav class="flex flex-col gap-4">
-    <a href="<?= site_url('dashboard') ?>" class="flex items-center gap-2 px-4 py-2 rounded hover:bg-[#C19A6B] transition">
-      <i class="fa-solid fa-chart-line"></i> <span>Dashboard</span>
-    </a>
-    <a href="<?=site_url('users')?>" class="flex items-center gap-2 px-4 py-2 rounded hover:bg-[#C19A6B] transition">
-      <i class="fa-solid fa-user"></i> <span>Users</span>
-    </a>
-    <a href="<?=site_url('rooms')?>" class="flex items-center gap-2 px-4 py-2 rounded hover:bg-[#C19A6B] transition">
-      <i class="fa-solid fa-bed"></i> <span>Rooms</span>
-    </a>
-    <a href="<?=site_url('admin/reservations')?>" class="flex items-center gap-2 px-4 py-2 rounded hover:bg-[#C19A6B] transition">
-      <i class="fa-solid fa-list-check"></i> <span>Reservations</span>
-    </a>
-    <a href="<?=site_url('admin/reports')?>" class="flex items-center gap-2 px-4 py-2 rounded hover:bg-[#C19A6B] transition">
-      <i class="fa-solid fa-file-chart-line"></i> <span>Tenant Reports</span>
-    </a>
-    <a href="<?=site_url('announcements')?>" class="flex items-center gap-2 px-4 py-2 rounded bg-[#C19A6B] text-white font-semibold">
-      <i class="fa-solid fa-bullhorn"></i> <span>Announcements</span>
-    </a>
-    <a href="<?=site_url('settings')?>" class="flex items-center gap-2 px-4 py-2 rounded hover:bg-[#C19A6B] transition">
-      <i class="fa-solid fa-cog"></i> <span>Settings</span>
-    </a>
-    <a href="<?=site_url('auth/logout')?>" class="flex items-center gap-2 px-4 py-2 rounded hover:bg-red-300 transition mt-6">
-      <i class="fa-solid fa-right-from-bracket"></i> <span>Logout</span>
-    </a>
-  </nav>
-      <i class="fa-solid fa-cog"></i> <span>Settings</span>
-    </a>
-    <hr class="border-[#5C4033] border-opacity-20 my-4">
-    <div class="px-4 py-2 text-xs text-[#5C4033] opacity-75">
-      <i class="fa-solid fa-phone mr-2"></i>
-      <span class="sidebar-text">Contact: 09517394938</span>
-    </div>
-    <a href="<?= site_url('auth/logout') ?>" class="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-red-400 hover:text-white transition">
-      <i class="fa-solid fa-right-from-bracket"></i> <span>Logout</span>
-    </a>
-  </nav>
-</div>
+<?php include __DIR__ . '/../includes/sidebar.php'; ?>
 
 <!-- Main Content -->
 <div class="flex-1 transition-all duration-300" id="mainContent" style="margin-left: 16rem;">
@@ -134,9 +87,6 @@ if(session_status() === PHP_SESSION_NONE) session_start();
       </div>
     </div>
     <div class="flex items-center gap-4">
-      <button id="darkModeToggle" class="p-2 rounded-lg border border-[#C19A6B] hover:bg-[#C19A6B] hover:text-white transition">
-        <i class="fa-solid fa-moon" id="darkModeIcon"></i>
-      </button>
       <button onclick="openCreateModal()" class="bg-[#C19A6B] text-white px-4 py-2 rounded-lg hover:bg-[#5C4033] transition-all">
         <i class="fa-solid fa-plus mr-2"></i>New Announcement
       </button>
@@ -191,17 +141,20 @@ if(session_status() === PHP_SESSION_NONE) session_start();
                 </div>
             </div>
         </div>
-        <div style="background: #FFF5E1;" class="p-6 rounded-xl shadow-sm border admin-card" style="border-color: #C19A6B;">
+        <button type="button" id="openCommentsSummary" class="text-left" style="background: #FFF5E1; border: none; cursor: pointer;">
+          <div class="p-6 rounded-xl shadow-sm border admin-card transition-transform duration-200 hover:-translate-y-1" style="border-color: #C19A6B;">
             <div class="flex items-center gap-4">
-                <div class="bg-blue-100 p-3 rounded-lg">
-                    <i class="fa-solid fa-comments text-blue-600 text-xl"></i>
-                </div>
-                <div>
-                    <h3 class="font-semibold text-[#5C4033]">Comments</h3>
-                    <p class="text-2xl font-bold text-blue-600"><?= $totalComments ?? 0 ?></p>
-                </div>
+              <div class="bg-blue-100 p-3 rounded-lg">
+                <i class="fa-solid fa-comments text-blue-600 text-xl"></i>
+              </div>
+              <div>
+                <h3 class="font-semibold text-[#5C4033]">Comments</h3>
+                <p class="text-2xl font-bold text-blue-600"><?= $totalComments ?? 0 ?></p>
+                <p class="text-xs text-[#5C4033] opacity-75">Click to review tenant replies</p>
+              </div>
             </div>
-        </div>
+          </div>
+        </button>
     </div>
 
     <!-- Filter and Search -->
@@ -245,7 +198,7 @@ if(session_status() === PHP_SESSION_NONE) session_start();
         <table class="w-full">
           <thead style="background: #e6ddd4;">
             <tr>
-              <th class="px-6 py-3 text-left text-xs font-medium text-[#5C4033] uppercase tracking-wider">Title</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-[#5C4033] uppercase tracking-wider">Subject</th>
               <th class="px-6 py-3 text-left text-xs font-medium text-[#5C4033] uppercase tracking-wider">Priority</th>
               <th class="px-6 py-3 text-left text-xs font-medium text-[#5C4033] uppercase tracking-wider">Status</th>
               <th class="px-6 py-3 text-left text-xs font-medium text-[#5C4033] uppercase tracking-wider">Comments</th>
@@ -354,8 +307,8 @@ if(session_status() === PHP_SESSION_NONE) session_start();
       </div>
       
       <div class="mb-4">
-        <label class="block text-[#5C4033] font-semibold mb-2">Title</label>
-        <input type="text" id="title" name="title" required placeholder="Announcement title" 
+        <label class="block text-[#5C4033] font-semibold mb-2">Subject</label>
+        <input type="text" id="title" name="title" required placeholder="Announcement subject" 
                class="w-full px-4 py-2 border border-[#C19A6B] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C19A6B] bg-[#FFF5E1]">
       </div>
       
@@ -376,6 +329,48 @@ if(session_status() === PHP_SESSION_NONE) session_start();
     </form>
   </div>
 </div>
+
+  <!-- Comments Review Modal -->
+  <div id="commentsReviewModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+    <div class="bg-[#FFF5E1] rounded-xl shadow-2xl w-full max-w-5xl mx-4 max-h-[90vh] overflow-hidden border-2 border-[#C19A6B] flex flex-col md:flex-row">
+      <div class="md:w-72 bg-[#F8EAD6] border-r border-[#E5D3B3] overflow-y-auto" id="commentsAnnouncementList">
+        <div class="p-4 border-b border-[#E5D3B3] flex items-center justify-between">
+          <div>
+            <h3 class="text-lg font-bold text-[#5C4033]">Announcements</h3>
+            <p class="text-xs text-[#5C4033] opacity-75">Select an announcement to review tenant replies.</p>
+          </div>
+          <button type="button" onclick="closeCommentsReviewModal()" class="text-[#5C4033] hover:text-red-600">
+            <i class="fa-solid fa-times"></i>
+          </button>
+        </div>
+        <ul id="commentsAnnouncementItems" class="divide-y divide-[#E5D3B3]"></ul>
+      </div>
+
+      <div class="flex-1 flex flex-col">
+        <div class="p-5 border-b border-[#E5D3B3]">
+          <h3 class="text-xl font-bold text-[#5C4033]" id="commentsReviewTitle">Comments</h3>
+          <p class="text-sm text-[#5C4033] opacity-75" id="commentsReviewMeta"></p>
+        </div>
+        <div class="flex-1 overflow-y-auto p-5" id="commentsReviewBody">
+          <div id="commentsReviewLoading" class="hidden items-center gap-2 text-[#5C4033] text-sm">
+            <i class="fa-solid fa-spinner fa-spin"></i>
+            Loading comments...
+          </div>
+          <div id="commentsReviewError" class="hidden bg-red-100 border border-red-300 text-red-700 px-4 py-3 rounded-lg mb-3 text-sm"></div>
+          <div id="commentsReviewEmpty" class="hidden text-center text-[#5C4033] opacity-75 py-10">
+            <i class="fa-solid fa-comments-slash text-3xl mb-3"></i>
+            <p>No tenant comments for this announcement yet.</p>
+          </div>
+          <ul id="commentsReviewList" class="space-y-4"></ul>
+        </div>
+        <div class="p-5 border-t border-[#E5D3B3] flex justify-end">
+          <button type="button" onclick="closeCommentsReviewModal()" class="px-4 py-2 bg-[#C19A6B] text-white rounded-lg hover:bg-[#5C4033] transition">
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
 
 <!-- Mobile Menu Overlay -->
 <div id="mobileOverlay" class="fixed inset-0 bg-black bg-opacity-50 z-30 hidden md:hidden"></div>
@@ -413,63 +408,248 @@ if (sidebarToggle) {
 
 // Mobile menu functionality
 const menuBtn = document.getElementById('menuBtn');
-const sidebar = document.getElementById('sidebar');
 const mobileOverlay = document.getElementById('mobileOverlay');
+const commentsReviewModal = document.getElementById('commentsReviewModal');
+const commentsAnnouncementItems = document.getElementById('commentsAnnouncementItems');
+const commentsReviewTitle = document.getElementById('commentsReviewTitle');
+const commentsReviewMeta = document.getElementById('commentsReviewMeta');
+const commentsReviewList = document.getElementById('commentsReviewList');
+const commentsReviewLoading = document.getElementById('commentsReviewLoading');
+const commentsReviewEmpty = document.getElementById('commentsReviewEmpty');
+const commentsReviewError = document.getElementById('commentsReviewError');
 
-menuBtn.addEventListener('click', () => {
+if (menuBtn && sidebar && mobileOverlay) {
+  menuBtn.addEventListener('click', () => {
     sidebar.classList.toggle('open');
     mobileOverlay.classList.toggle('hidden');
-});
+  });
 
-mobileOverlay.addEventListener('click', () => {
+  mobileOverlay.addEventListener('click', () => {
     sidebar.classList.remove('open');
     mobileOverlay.classList.add('hidden');
+  });
+}
+
+const announcementSummaries = <?= json_encode(array_map(static function ($item) {
+  return [
+    'id' => (int) ($item['id'] ?? 0),
+    'title' => $item['title'] ?? 'Untitled announcement',
+    'priority' => $item['priority'] ?? 'medium',
+    'comment_count' => (int) ($item['comment_count'] ?? 0),
+    'is_active' => (int) ($item['is_active'] ?? 0)
+  ];
+}, $announcements ?? []), JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP); ?>;
+
+const announcementDetails = <?= json_encode((function(array $items) {
+  $formatted = [];
+  foreach ($items as $item) {
+    $id = isset($item['id']) ? (int) $item['id'] : 0;
+    if ($id <= 0) {
+      continue;
+    }
+
+    $comments = [];
+    foreach ($item['comments'] ?? [] as $comment) {
+      $createdAt = $comment['created_at'] ?? '';
+      $comments[] = [
+        'id' => isset($comment['id']) ? (int) $comment['id'] : 0,
+        'user_name' => $comment['user_name'] ?? 'Tenant',
+        'comment' => $comment['comment'] ?? '',
+        'created_at' => $createdAt,
+        'created_at_human' => $createdAt ? date('M j, Y g:i A', strtotime($createdAt)) : ''
+      ];
+    }
+
+    $formatted[$id] = [
+      'title' => $item['title'] ?? 'Untitled announcement',
+      'priority' => $item['priority'] ?? 'medium',
+      'is_active' => isset($item['is_active']) ? (int) $item['is_active'] : 0,
+      'content' => $item['content'] ?? '',
+      'expires_at' => $item['expires_at'] ?? null,
+      'comments' => $comments
+    ];
+  }
+
+  return $formatted;
+})($announcements ?? []), JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP); ?>;
+
+let activeAnnouncementId = null;
+
+function openCommentsReviewModal() {
+  if (!commentsReviewModal) {
+    return;
+  }
+
+  commentsReviewError.classList.add('hidden');
+  commentsReviewEmpty.classList.add('hidden');
+  commentsReviewList.innerHTML = '';
+  renderAnnouncementList();
+  commentsReviewModal.classList.remove('hidden');
+
+  const defaultAnnouncement = announcementSummaries.find(item => item.comment_count > 0)
+    || announcementSummaries[0]
+    || null;
+
+  if (defaultAnnouncement) {
+    loadAnnouncementComments(defaultAnnouncement.id, defaultAnnouncement);
+  } else {
+    commentsReviewTitle.textContent = 'Comments';
+    commentsReviewMeta.textContent = 'No announcements available yet.';
+    commentsReviewEmpty.classList.remove('hidden');
+  }
+}
+
+function closeCommentsReviewModal() {
+  if (!commentsReviewModal) {
+    return;
+  }
+
+  commentsReviewModal.classList.add('hidden');
+  activeAnnouncementId = null;
+}
+
+function renderAnnouncementList() {
+  if (!commentsAnnouncementItems) {
+    return;
+  }
+
+  commentsAnnouncementItems.innerHTML = '';
+
+  if (!Array.isArray(announcementSummaries) || announcementSummaries.length === 0) {
+    const placeholder = document.createElement('li');
+    placeholder.className = 'p-4 text-sm text-[#5C4033] opacity-75';
+    placeholder.textContent = 'No announcements available.';
+    commentsAnnouncementItems.appendChild(placeholder);
+    return;
+  }
+
+  announcementSummaries.forEach(item => {
+    const listItem = document.createElement('li');
+    listItem.className = 'p-4 cursor-pointer hover:bg-[#F0E0C8] transition flex flex-col gap-1';
+    listItem.dataset.announcementId = String(item.id);
+
+    const titleEl = document.createElement('p');
+    titleEl.className = 'text-sm font-semibold text-[#5C4033]';
+    titleEl.textContent = item.title;
+
+    const metaEl = document.createElement('div');
+    metaEl.className = 'flex items-center justify-between text-xs text-[#5C4033] opacity-75 gap-2';
+    const commentLabel = item.comment_count === 1 ? 'comment' : 'comments';
+    metaEl.innerHTML = `<span>${item.comment_count} ${commentLabel}</span><span class="uppercase font-semibold">${item.priority}</span>`;
+
+    if (!item.is_active) {
+      const inactiveBadge = document.createElement('span');
+      inactiveBadge.className = 'text-[10px] uppercase tracking-wide text-red-600 font-bold';
+      inactiveBadge.textContent = 'Inactive';
+      metaEl.appendChild(inactiveBadge);
+    }
+
+    listItem.appendChild(titleEl);
+    listItem.appendChild(metaEl);
+
+    listItem.addEventListener('click', () => {
+      loadAnnouncementComments(item.id, item);
+    });
+
+    commentsAnnouncementItems.appendChild(listItem);
+  });
+}
+
+function loadAnnouncementComments(announcementId, announcementMeta) {
+  if (!commentsReviewList) {
+    return;
+  }
+
+  if (activeAnnouncementId === announcementId) {
+    return;
+  }
+
+  activeAnnouncementId = announcementId;
+  commentsReviewError.classList.add('hidden');
+  commentsReviewEmpty.classList.add('hidden');
+  commentsReviewList.innerHTML = '';
+  commentsReviewLoading.classList.remove('hidden');
+
+  if (commentsAnnouncementItems) {
+    Array.from(commentsAnnouncementItems.children).forEach(node => {
+      node.classList.remove('bg-[#E3D4BC]');
+      if (parseInt(node.dataset.announcementId || '0', 10) === announcementId) {
+        node.classList.add('bg-[#E3D4BC]');
+      }
+    });
+  }
+
+  const detailKey = String(announcementId);
+  const detail = (announcementDetails && (announcementDetails[detailKey] ?? announcementDetails[announcementId])) || null;
+
+  if (!detail) {
+    commentsReviewLoading.classList.add('hidden');
+    commentsReviewError.textContent = 'Comments data is not available for this announcement.';
+    commentsReviewError.classList.remove('hidden');
+    return;
+  }
+
+  const statusLabel = (detail.is_active ?? announcementMeta?.is_active) ? 'Active' : 'Inactive';
+  const priorityLabel = detail.priority || announcementMeta?.priority || 'medium';
+  const titleLabel = detail.title || announcementMeta?.title || 'Comments';
+  const comments = Array.isArray(detail.comments) ? detail.comments : [];
+  const commentLabel = comments.length === 1 ? 'comment' : 'comments';
+
+  commentsReviewTitle.textContent = titleLabel;
+  commentsReviewMeta.textContent = `${comments.length} ${commentLabel} • ${priorityLabel} • ${statusLabel}`;
+
+  commentsReviewLoading.classList.add('hidden');
+
+  if (comments.length === 0) {
+    commentsReviewEmpty.classList.remove('hidden');
+    return;
+  }
+
+  comments.forEach(comment => {
+    const item = document.createElement('li');
+    item.className = 'bg-[#F8EAD6] border border-[#E5D3B3] rounded-lg p-4 shadow-sm';
+
+    const header = document.createElement('div');
+    header.className = 'flex items-center justify-between mb-2';
+
+    const author = document.createElement('span');
+    author.className = 'text-sm font-semibold text-[#5C4033]';
+    author.textContent = comment.user_name || 'Tenant';
+
+    const timestamp = document.createElement('span');
+    timestamp.className = 'text-xs text-[#5C4033] opacity-75';
+    timestamp.textContent = comment.created_at_human || '';
+
+    header.appendChild(author);
+    header.appendChild(timestamp);
+
+    const body = document.createElement('p');
+    body.className = 'text-sm text-[#5C4033] whitespace-pre-line';
+    body.textContent = comment.comment || '';
+
+    item.appendChild(header);
+    item.appendChild(body);
+
+    commentsReviewList.appendChild(item);
+  });
+}
+
+const openCommentsSummaryButton = document.getElementById('openCommentsSummary');
+if (openCommentsSummaryButton) {
+  openCommentsSummaryButton.addEventListener('click', openCommentsReviewModal);
+}
+
+document.addEventListener('keydown', event => {
+  if (event.key === 'Escape' && commentsReviewModal && !commentsReviewModal.classList.contains('hidden')) {
+    closeCommentsReviewModal();
+  }
 });
 
-// Dark mode functionality
-function initDarkMode() {
-    const darkModeToggle = document.getElementById('darkModeToggle');
-    const darkModeIcon = document.getElementById('darkModeIcon');
-    const mainBody = document.body;
-    
-    if (!darkModeToggle) return;
-    
-    // Check for saved dark mode preference
-    const isDarkMode = localStorage.getItem("adminDarkMode") === "true";
-    if (isDarkMode) {
-        mainBody.classList.add("dark");
-        if(darkModeIcon) darkModeIcon.className = "fa-solid fa-sun";
-    }
-    
-    darkModeToggle.addEventListener("click", () => {
-        mainBody.classList.toggle("dark");
-        const isDark = mainBody.classList.contains("dark");
-        
-        // Save preference
-        localStorage.setItem("adminDarkMode", isDark);
-        
-        // Update icon
-        if(darkModeIcon) {
-            darkModeIcon.className = isDark ? "fa-solid fa-sun" : "fa-solid fa-moon";
-        }
-        
-        // Update database setting via AJAX
-        fetch("<?= site_url('settings/update') ?>", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/x-www-form-urlencoded",
-            },
-            body: "dark_mode_admin=" + (isDark ? "1" : "0") + "&ajax=1"
-        });
-    });
-}
-
-// Initialize when DOM is ready
-if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", initDarkMode);
-} else {
-    initDarkMode();
-}
+document.addEventListener('click', event => {
+  if (event.target === commentsReviewModal) {
+    closeCommentsReviewModal();
+  }
+});
 
 // Filter and search functionality
 document.addEventListener('DOMContentLoaded', function() {
@@ -505,11 +685,34 @@ document.addEventListener('DOMContentLoaded', function() {
     searchInput.addEventListener('input', filterRows);
 });
 
+function normalizeDateInput(value) {
+  if (!value) {
+    return '';
+  }
+
+  const trimmed = String(value).trim();
+  const isoMatch = trimmed.match(/^(\d{4}-\d{2}-\d{2})/);
+  if (isoMatch) {
+    return isoMatch[1];
+  }
+
+  const parsed = new Date(trimmed);
+  if (!Number.isNaN(parsed.getTime())) {
+    return parsed.toISOString().slice(0, 10);
+  }
+
+  return '';
+}
+
 // Modal functions
 function openCreateModal() {
     document.getElementById('modalTitle').textContent = 'Create New Announcement';
     document.getElementById('announcementForm').reset();
     document.getElementById('announcementId').value = '';
+    const priorityField = document.getElementById('priority');
+    if (priorityField) {
+      priorityField.value = 'medium';
+    }
     document.getElementById('announcementModal').classList.remove('hidden');
 }
 
@@ -518,35 +721,31 @@ function closeModal() {
 }
 
 function editAnnouncement(id) {
-    // Fetch announcement data and populate form
-    fetch(`<?= site_url('announcements/get/') ?>${id}`, {
-        method: 'GET',
-        headers: {
-            'Content-Type': 'application/json',
-        }
-    })
-    .then(response => {
-        if (!response.ok) {
-            throw new Error('Failed to fetch announcement data');
-        }
-        return response.json();
-    })
-    .then(data => {
-        // Populate form with announcement data
-        document.getElementById('modalTitle').textContent = 'Edit Announcement';
-        document.getElementById('announcementId').value = data.id;
-        document.getElementById('title').value = data.title;
-        document.getElementById('content').value = data.content;
-        document.getElementById('priority').value = data.priority;
-        document.getElementById('expires_at').value = data.expires_at ? data.expires_at.split(' ')[0] : '';
-        
-        // Show modal
-        document.getElementById('announcementModal').classList.remove('hidden');
-    })
-    .catch(error => {
-        console.error('Error fetching announcement:', error);
-        alert('Error loading announcement data: ' + error.message);
-    });
+    const detailKey = String(id);
+    const detail = (announcementDetails && (announcementDetails[detailKey] ?? announcementDetails[id])) || null;
+
+    if (!detail) {
+      alert('Announcement data is not available. Please refresh the page and try again.');
+      return;
+    }
+
+    document.getElementById('modalTitle').textContent = 'Edit Announcement';
+    document.getElementById('announcementId').value = id;
+    document.getElementById('title').value = detail.title || '';
+    document.getElementById('content').value = detail.content || '';
+    const priorityField = document.getElementById('priority');
+    if (priorityField) {
+      const desiredPriority = (detail.priority || 'medium').toLowerCase();
+      const allowed = ['low', 'medium', 'high', 'urgent'];
+      priorityField.value = allowed.includes(desiredPriority) ? desiredPriority : 'medium';
+    }
+
+    const expiresField = document.getElementById('expiresAt');
+    if (expiresField) {
+      expiresField.value = normalizeDateInput(detail.expires_at);
+    }
+
+    document.getElementById('announcementModal').classList.remove('hidden');
 }
 
 // Submit announcement
@@ -563,14 +762,20 @@ async function submitAnnouncement(event) {
     try {
         const formData = new FormData(event.target);
         const response = await fetch('<?= site_url('announcements/save') ?>', {
-            method: 'POST',
-            body: formData
+          method: 'POST',
+          body: formData,
+          credentials: 'same-origin',
+          headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+          }
         });
-        
-        if (response.ok) {
-            window.location.reload();
+
+        const data = await response.json();
+
+        if (response.ok && data.status === 'success') {
+          window.location.reload();
         } else {
-            throw new Error('Failed to save announcement');
+          throw new Error(data.message || 'Failed to save announcement');
         }
     } catch (error) {
         console.error('Error saving announcement:', error);
@@ -589,17 +794,21 @@ async function toggleStatus(id, newStatus) {
     
     try {
         const response = await fetch('<?= site_url('announcements/toggle') ?>', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-            },
-            body: `id=${id}&status=${newStatus}`
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'X-Requested-With': 'XMLHttpRequest'
+          },
+          credentials: 'same-origin',
+          body: `id=${encodeURIComponent(id)}&status=${encodeURIComponent(newStatus)}`
         });
-        
-        if (response.ok) {
-            window.location.reload();
+
+        const data = await response.json();
+
+        if (response.ok && data.status === 'success') {
+          window.location.reload();
         } else {
-            throw new Error('Failed to update status');
+          throw new Error(data.message || 'Failed to update status');
         }
     } catch (error) {
         alert('Error updating status: ' + error.message);
@@ -613,17 +822,21 @@ async function deleteAnnouncement(id) {
     
     try {
         const response = await fetch('<?= site_url('announcements/delete') ?>', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-            },
-            body: `id=${id}`
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'X-Requested-With': 'XMLHttpRequest'
+          },
+          credentials: 'same-origin',
+          body: `id=${encodeURIComponent(id)}`
         });
-        
-        if (response.ok) {
-            window.location.reload();
+
+        const data = await response.json();
+
+        if (response.ok && data.status === 'success') {
+          window.location.reload();
         } else {
-            throw new Error('Failed to delete announcement');
+          throw new Error(data.message || 'Failed to delete announcement');
         }
     } catch (error) {
         alert('Error deleting announcement: ' + error.message);

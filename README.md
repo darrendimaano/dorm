@@ -16,6 +16,11 @@
 
 [Checkout LavaLust Tutorial's Youtube Channel](https://youtube.com/ronmarasigan)
 
+### Room Availability Counters
+- Room availability now adjusts only through application logic when reservations or occupancy change.
+- Database triggers that previously updated availability are disabled; remove legacy triggers with `DROP TRIGGER IF EXISTS update_room_availability_insert;` (and the related update/delete triggers) before deploying.
+- If you ever need to re-sync counts after manual database edits, call `RoomsModel::refreshAvailabilityCounters()` from a maintenance script; avoid wiring this into normal request flow.
+
 ### Licence
 <p>
     MIT License

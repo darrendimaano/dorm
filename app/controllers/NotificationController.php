@@ -11,6 +11,9 @@ class NotificationController extends Controller
         parent::__construct();
         $dbConfig = DatabaseConfig::getInstance();
         $this->db = $dbConfig->getConnection();
+
+        $this->ensurePaymentHistorySchema();
+        $this->ensureReservationBillingColumns();
     }
 
     // Auto-update stay dates when reservation is approved
@@ -183,38 +186,199 @@ class NotificationController extends Controller
 
     // Process payment and update due date
     public function processPayment($reservation_id, $amount, $payment_date, $payment_method, $notes = '') {
+        // Ensure reservation exists and is already approved
+        $reservationStmt = $this->db->prepare("SELECT status FROM reservations WHERE id = ?");
+        $reservationStmt->execute([$reservation_id]);
+        $reservation = $reservationStmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$reservation) {
+            throw new Exception('Reservation not found.');
+        }
+
+        $status = strtolower((string) ($reservation['status'] ?? ''));
+        if (!in_array($status, ['approved', 'confirmed'], true)) {
+            throw new Exception('Reservation must be approved before recording a payment.');
+        }
+
+        $stmt = $this->db->prepare(
+            "INSERT INTO payment_history (
+                reservation_id,
+                amount,
+                payment_method,
+                transaction_reference,
+                payment_for,
+                payment_date,
+                notes,
+                status
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
+        );
+
+        $stmt->execute([
+            $reservation_id,
+            $amount,
+            $payment_method,
+            null,
+            'monthly_rent',
+            $payment_date,
+            $notes,
+            'pending'
+        ]);
+
+        return (int) $this->db->lastInsertId();
+    }
+
+    public function approvePayment(int $paymentId): void {
+        $this->db->beginTransaction();
+
         try {
-            // Record payment
-            $stmt = $this->db->prepare("
-                INSERT INTO payment_history (reservation_id, amount, payment_date, payment_method, notes)
-                VALUES (?, ?, ?, ?, ?)
-            ");
-            
-            $stmt->execute([$reservation_id, $amount, $payment_date, $payment_method, $notes]);
-            
-            // Update next due date (add 30 days from current due date)
-            $stmt = $this->db->prepare("
+            $paymentStmt = $this->db->prepare(
+                "SELECT * FROM payment_history WHERE id = ? FOR UPDATE"
+            );
+            $paymentStmt->execute([$paymentId]);
+            $payment = $paymentStmt->fetch(PDO::FETCH_ASSOC);
+
+            if (!$payment) {
+                throw new Exception('Payment record not found.');
+            }
+
+            if (strtolower((string) $payment['status']) !== 'pending') {
+                throw new Exception('Only pending payments can be approved.');
+            }
+
+            $reservationStmt = $this->db->prepare("SELECT * FROM reservations WHERE id = ?");
+            $reservationStmt->execute([$payment['reservation_id']]);
+            $reservation = $reservationStmt->fetch(PDO::FETCH_ASSOC);
+
+            if (!$reservation) {
+                throw new Exception('Reservation not found for payment record.');
+            }
+
+            $paymentDate = $payment['payment_date'];
+
+            $updateReservation = $this->db->prepare("
                 UPDATE reservations 
                 SET last_payment_date = ?,
-                    monthly_due_date = DATE_ADD(monthly_due_date, INTERVAL 30 DAY)
+                    monthly_due_date = CASE 
+                        WHEN monthly_due_date IS NULL OR monthly_due_date < ? THEN DATE_ADD(?, INTERVAL 30 DAY)
+                        ELSE DATE_ADD(monthly_due_date, INTERVAL 30 DAY)
+                    END
                 WHERE id = ?
             ");
-            
-            $stmt->execute([$payment_date, $reservation_id]);
-            
-            // Create payment confirmation notification with actual next due date
-            $stmt = $this->db->prepare("SELECT monthly_due_date FROM reservations WHERE id = ?");
-            $stmt->execute([$reservation_id]);
-            $updated_reservation = $stmt->fetch(PDO::FETCH_ASSOC);
-            
-            $next_due_date = $updated_reservation ? date('M j, Y', strtotime($updated_reservation['monthly_due_date'])) : 'updated due date';
-            
-            $this->createNotification($reservation_id, 'payment_reminder', 
-                "Payment of ₱" . number_format($amount, 2) . " received on {$payment_date}. Thank you! Your next payment is due on {$next_due_date}.");
-            
-            return true;
+            $updateReservation->execute([$paymentDate, $paymentDate, $paymentDate, $payment['reservation_id']]);
+
+            $updatePayment = $this->db->prepare("UPDATE payment_history SET status = 'approved', approved_at = NOW() WHERE id = ?");
+            $updatePayment->execute([$paymentId]);
+
+            $nextDueStmt = $this->db->prepare("SELECT monthly_due_date FROM reservations WHERE id = ?");
+            $nextDueStmt->execute([$payment['reservation_id']]);
+            $updatedReservation = $nextDueStmt->fetch(PDO::FETCH_ASSOC);
+
+            $nextDueDate = $updatedReservation ? date('M j, Y', strtotime($updatedReservation['monthly_due_date'])) : 'updated due date';
+
+            $this->createNotification(
+                $payment['reservation_id'],
+                'payment_reminder',
+                "Payment of ₱" . number_format($payment['amount'], 2) . " received on {$paymentDate}. Thank you! Your next payment is due on {$nextDueDate}."
+            );
+
+            $this->db->commit();
         } catch (Exception $e) {
-            return false;
+            $this->db->rollBack();
+            throw $e;
+        }
+    }
+
+    public function rejectPayment(int $paymentId, string $reason = ''): void {
+        $stmt = $this->db->prepare("SELECT reservation_id, amount, payment_date, status FROM payment_history WHERE id = ?");
+        $stmt->execute([$paymentId]);
+        $payment = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$payment) {
+            throw new Exception('Payment record not found.');
+        }
+
+        if (strtolower((string) $payment['status']) !== 'pending') {
+            throw new Exception('Only pending payments can be rejected.');
+        }
+
+        $update = $this->db->prepare("UPDATE payment_history SET status = 'rejected', notes = CONCAT_WS(' | ', notes, ?) WHERE id = ?");
+        $update->execute([$reason !== '' ? 'Rejected: ' . $reason : 'Rejected', $paymentId]);
+
+        $message = 'Payment request submitted on ' . date('M j, Y', strtotime($payment['payment_date'])) . ' for ₱' . number_format($payment['amount'], 2) . ' was rejected.';
+        if ($reason !== '') {
+            $message .= ' Reason: ' . $reason;
+        }
+
+        $this->createNotification($payment['reservation_id'], 'payment_rejected', $message);
+    }
+
+    private function ensurePaymentHistorySchema(): void {
+        try {
+            $this->db->exec("CREATE TABLE IF NOT EXISTS payment_history (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                reservation_id INT NOT NULL,
+                amount DECIMAL(10,2) NOT NULL,
+                payment_method VARCHAR(50) NOT NULL,
+                transaction_reference VARCHAR(100) DEFAULT NULL,
+                payment_for VARCHAR(100) DEFAULT NULL,
+                payment_date DATETIME NOT NULL,
+                notes TEXT DEFAULT NULL,
+                status ENUM('pending','approved','rejected') DEFAULT 'pending',
+                approved_at DATETIME DEFAULT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                INDEX idx_payment_history_reservation (reservation_id),
+                CONSTRAINT fk_payment_history_reservation FOREIGN KEY (reservation_id)
+                    REFERENCES reservations(id) ON DELETE CASCADE
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+
+            $columnsToEnsure = [
+                'transaction_reference' => "ALTER TABLE payment_history ADD COLUMN transaction_reference VARCHAR(100) DEFAULT NULL AFTER payment_method",
+                'payment_for' => "ALTER TABLE payment_history ADD COLUMN payment_for VARCHAR(100) DEFAULT NULL AFTER transaction_reference",
+                'status' => "ALTER TABLE payment_history ADD COLUMN status ENUM('pending','approved','rejected') DEFAULT 'pending' AFTER notes",
+                'approved_at' => "ALTER TABLE payment_history ADD COLUMN approved_at DATETIME DEFAULT NULL AFTER status",
+                'created_at' => "ALTER TABLE payment_history ADD COLUMN created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP AFTER approved_at"
+            ];
+
+            foreach ($columnsToEnsure as $column => $statement) {
+                try {
+                    $this->db->query("SELECT {$column} FROM payment_history LIMIT 1");
+                } catch (\PDOException $e) {
+                    try {
+                        $this->db->exec($statement);
+                    } catch (\PDOException $ignore) {
+                        // Ignore if column still cannot be added.
+                    }
+                }
+            }
+
+            try {
+                $this->db->exec("UPDATE payment_history SET status = 'approved' WHERE status IS NULL OR status = ''");
+            } catch (Exception $ignored) {
+                // Ignore failures during backfill
+            }
+        } catch (Exception $e) {
+            // Swallow schema ensure issues silently.
+        }
+    }
+
+    private function ensureReservationBillingColumns(): void {
+        $columnsToEnsure = [
+            'stay_start_date' => "ALTER TABLE reservations ADD COLUMN stay_start_date DATE NULL AFTER updated_at",
+            'stay_end_date' => "ALTER TABLE reservations ADD COLUMN stay_end_date DATE NULL AFTER stay_start_date",
+            'monthly_due_date' => "ALTER TABLE reservations ADD COLUMN monthly_due_date DATE NULL AFTER stay_end_date",
+            'last_payment_date' => "ALTER TABLE reservations ADD COLUMN last_payment_date DATE NULL AFTER monthly_due_date"
+        ];
+
+        foreach ($columnsToEnsure as $column => $statement) {
+            try {
+                $this->db->query("SELECT {$column} FROM reservations LIMIT 1");
+            } catch (\PDOException $e) {
+                try {
+                    $this->db->exec($statement);
+                } catch (\PDOException $ignore) {
+                    // Ignore if column still cannot be added.
+                }
+            }
         }
     }
 }

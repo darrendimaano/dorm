@@ -15,6 +15,7 @@ return array(
     'ConsoleController' => $baseDir . '/app/controllers/ConsoleController.php',
     'DashboardController' => $baseDir . '/app/controllers/DashboardController.php',
     'DatabaseConfig' => $baseDir . '/app/config/DatabaseConfig.php',
+    'Dompdf\\Cpdf' => $vendorDir . '/dompdf/dompdf/lib/Cpdf.php',
     'LandingController' => $baseDir . '/app/controllers/LandingController.php',
     'MaintenanceController' => $baseDir . '/app/controllers/MaintenanceController.php',
     'NotificationController' => $baseDir . '/app/controllers/NotificationController.php',

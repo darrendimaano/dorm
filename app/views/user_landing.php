@@ -1,10 +1,133 @@
 <?php
 defined('PREVENT_DIRECT_ACCESS') OR exit('No direct script access allowed');
 if(session_status() === PHP_SESSION_NONE) session_start();
+$darkModeEnabled = false;
+$paymentAlert = $paymentAlert ?? ['show' => false];
+
+if (!function_exists('resolve_room_picture_paths')) {
+    function resolve_room_picture_paths($picturePath, $pictureHash = '') {
+        static $cachedRoot = null;
+        $result = [
+            'has_picture'   => false,
+            'absolute_path' => '',
+            'web_path'      => '',
+            'file_name'     => '',
+            'stored_path'   => $picturePath ?? ''
+        ];
+
+        if (empty($picturePath)) {
+            return $result;
+        }
+
+        $normalized = str_replace('\\', '/', $picturePath);
+        $result['stored_path'] = $normalized;
+
+        if ($cachedRoot === null) {
+            $candidates = [
+                dirname(__DIR__, 2),
+                dirname(__DIR__, 3),
+                dirname(__DIR__, 4)
+            ];
+
+            foreach ($candidates as $candidate) {
+                if (is_string($candidate) && is_dir($candidate . DIRECTORY_SEPARATOR . 'public')) {
+                    $cachedRoot = $candidate;
+                    break;
+                }
+            }
+
+            if ($cachedRoot === null) {
+                $cachedRoot = dirname(__DIR__, 2);
+            }
+        }
+
+        if (preg_match('#^https?://#i', $normalized)) {
+            $result['has_picture'] = true;
+            $result['web_path'] = $normalized;
+            $parsedPath = parse_url($normalized, PHP_URL_PATH);
+            $result['file_name'] = $parsedPath ? basename($parsedPath) : '';
+            if ($pictureHash !== '') {
+                $separator = strpos($normalized, '?') === false ? '?' : '&';
+                $result['web_path'] .= $separator . 'v=' . rawurlencode($pictureHash);
+            }
+            return $result;
+        }
+
+        $isAbsoluteFs = preg_match('#^(?:[a-zA-Z]:/|/)#', $normalized) === 1;
+        if ($isAbsoluteFs) {
+            $absolutePath = str_replace('/', DIRECTORY_SEPARATOR, $normalized);
+        } else {
+            $relative = ltrim($normalized, '/');
+            $absolutePath = $cachedRoot . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $relative);
+        }
+
+        if (!file_exists($absolutePath)) {
+            return $result;
+        }
+
+        $result['has_picture'] = true;
+        $result['absolute_path'] = $absolutePath;
+        $result['file_name'] = basename($absolutePath);
+
+        if ($isAbsoluteFs) {
+            $basePath = $cachedRoot;
+            $normalizedAbsolute = str_replace('\\', '/', $absolutePath);
+            $normalizedBase = rtrim(str_replace('\\', '/', $basePath), '/');
+            if (strpos($normalizedAbsolute, $normalizedBase . '/') === 0) {
+                $relativeFromBase = substr($normalizedAbsolute, strlen($normalizedBase . '/'));
+            } else {
+                $relativeFromBase = $result['file_name'];
+            }
+        } else {
+            $relativeFromBase = ltrim($normalized, '/');
+        }
+
+        $relativeFromBase = ltrim(str_replace('\\', '/', $relativeFromBase), '/');
+        $baseUrl = rtrim(base_url(), '/');
+        $webPath = $baseUrl . '/' . $relativeFromBase;
+        if ($pictureHash !== '') {
+            $webPath .= (strpos($webPath, '?') === false ? '?' : '&') . 'v=' . rawurlencode($pictureHash);
+        }
+
+        $result['web_path'] = $webPath;
+
+        return $result;
+    }
+}
+
+if (!function_exists('normalize_room_price')) {
+    /**
+     * Convert various price formats (e.g., "₱1,500.00") into a float.
+     */
+    function normalize_room_price($value): float {
+        if ($value === null || $value === '') {
+            return 0.0;
+        }
+
+        if (is_numeric($value)) {
+            return (float) $value;
+        }
+
+        if (is_string($value)) {
+            $normalized = preg_replace('/[^0-9.]/', '', $value);
+            if ($normalized === '' || $normalized === '.') {
+                return 0.0;
+            }
+            // Handle multiple decimal points by keeping the first and removing the rest.
+            $parts = explode('.', $normalized);
+            if (count($parts) > 2) {
+                $normalized = array_shift($parts) . '.' . implode('', $parts);
+            }
+            return (float) $normalized;
+        }
+
+        return 0.0;
+    }
+}
 ?>
 
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="<?= $darkModeEnabled ? 'dark' : '' ?>">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -70,6 +193,21 @@ if(session_status() === PHP_SESSION_NONE) session_start();
   .dark .header-section {
     background: #2a2a2a !important;
   }
+    .dark [class*="bg-[#FFF5E1]"], .dark [class*="bg-white"] {
+        background: #1f1f1f !important;
+    }
+    .dark [class*="border-[#C19A6B]"], .dark [class*="border-[#E5D3B3]"] {
+        border-color: #3a3a3a !important;
+    }
+    .dark [class*="text-[#5C4033]"],
+    .dark [class*="text-gray-600"],
+    .dark [class*="text-gray-500"],
+    .dark [class*="text-[#5c4033]"] {
+        color: #e5e5e5 !important;
+    }
+    .dark [class*="text-[#C19A6B]"] {
+        color: #f2c17d !important;
+    }
   
   /* Dynamic message animations */
   .dynamic-message {
@@ -170,7 +308,43 @@ if(session_status() === PHP_SESSION_NONE) session_start();
   }
 </style>
 </head>
-<body class="min-h-screen transition-colors">
+<body class="min-h-screen transition-colors<?= $darkModeEnabled ? ' dark' : '' ?>">
+
+<?php if (!empty($paymentAlert['show'])): ?>
+<div id="paymentAlertModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center px-4">
+    <div class="bg-[#FFF5E1] w-full max-w-md rounded-xl shadow-2xl border-2 border-[#C19A6B] p-6 relative">
+        <button id="paymentAlertDismiss" class="absolute top-3 right-3 text-[#5C4033] hover:text-red-600" aria-label="Close alert">
+            <i class="fa-solid fa-xmark text-xl"></i>
+        </button>
+        <div class="flex items-center gap-3 mb-4">
+            <div class="bg-red-100 text-red-600 w-12 h-12 flex items-center justify-center rounded-full">
+                <i class="fa-solid fa-circle-exclamation text-2xl"></i>
+            </div>
+            <div>
+                <h2 class="text-xl font-bold text-[#5C4033]">Incomplete Payment Alert</h2>
+                <p class="text-sm text-[#5C4033] opacity-80">We noticed your payment for <?= htmlspecialchars($paymentAlert['month_label'] ?? date('F Y')) ?> is not fully settled.</p>
+            </div>
+        </div>
+        <div class="bg-white rounded-lg border border-[#E5D3B3] p-4 mb-4">
+            <ul class="space-y-2 text-sm text-[#5C4033]">
+                <li class="flex justify-between"><span>Amount due:</span><span class="font-semibold text-red-600">₱<?= number_format((float)($paymentAlert['due_amount'] ?? 0), 2) ?></span></li>
+                <li class="flex justify-between"><span>Paid this month:</span><span class="font-semibold text-green-600">₱<?= number_format((float)($paymentAlert['paid_amount'] ?? 0), 2) ?></span></li>
+                <li class="flex justify-between"><span>Pending for approval:</span><span class="font-semibold text-yellow-600">₱<?= number_format((float)($paymentAlert['pending_amount'] ?? 0), 2) ?></span></li>
+                <li class="flex justify-between border-t border-[#E5D3B3] pt-2"><span>Still outstanding:</span><span class="font-semibold text-red-700">₱<?= number_format((float)($paymentAlert['remaining_amount'] ?? 0), 2) ?></span></li>
+            </ul>
+        </div>
+        <p class="text-sm text-[#5C4033] opacity-80 mb-5">Please complete your payment today to avoid penalties or access restrictions.</p>
+        <div class="flex flex-col sm:flex-row sm:justify-end gap-3">
+            <button id="paymentAlertLater" class="w-full sm:w-auto px-4 py-2 rounded-lg border border-[#C19A6B] text-[#5C4033] font-semibold hover:bg-[#F6EDE0] transition">
+                Remind Me Later
+            </button>
+            <a href="<?= site_url('user/payments') ?>" class="w-full sm:w-auto px-4 py-2 rounded-lg bg-[#C19A6B] text-white font-semibold hover:bg-[#5C4033] transition text-center">
+                Go to Payment
+            </a>
+        </div>
+    </div>
+</div>
+<?php endif; ?>
 
 <!-- Sidebar -->
 <div id="sidebar" class="text-[#5C4033] w-64 min-h-screen p-6 fixed left-0 top-0 z-40 shadow-lg">
@@ -233,20 +407,17 @@ if(session_status() === PHP_SESSION_NONE) session_start();
         <p class="text-[#5C4033] opacity-75 text-sm">Find and request your perfect room</p>
       </div>
     </div>
-    <div class="flex items-center gap-4">
-      <button id="darkModeToggle" class="p-2 rounded-lg border border-[#C19A6B] hover:bg-[#C19A6B] hover:text-white transition">
-        <i class="fa-solid fa-moon" id="darkModeIcon"></i>
-      </button>
-      <div class="text-xs text-[#5C4033] opacity-75">
-        <i class="fa-solid fa-phone mr-1"></i>
-        09517394938
-      </div>
-      <?php if(isset($pendingCount) && $pendingCount > 0): ?>
-        <div class="bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full text-sm font-semibold">
-          <i class="fa-solid fa-clock"></i> <?= $pendingCount ?> Pending
+        <div class="flex items-center gap-4 flex-wrap justify-end">
+            <div class="flex items-center gap-2 text-xs text-[#5C4033] opacity-75 dark:text-gray-300 dark:opacity-100">
+                <i class="fa-solid fa-phone"></i>
+                <span>09517394938</span>
+            </div>
+            <?php if(isset($pendingCount) && $pendingCount > 0): ?>
+                <div class="bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full text-sm font-semibold dark:bg-yellow-900 dark:text-yellow-200">
+                    <i class="fa-solid fa-clock"></i> <?= $pendingCount ?> Pending
+                </div>
+            <?php endif; ?>
         </div>
-      <?php endif; ?>
-    </div>
   </div>
 
   <div class="w-full px-6 py-6">
@@ -264,6 +435,11 @@ if(session_status() === PHP_SESSION_NONE) session_start();
     <?php endif; ?>
 
     <!-- Quick Stats -->
+    <?php
+        $openRooms = $availableRoomsCount ?? 0;
+        $openBeds = $availableSpacesCount ?? 0;
+        $totalRoomsDisplay = $totalRoomsCount ?? count($rooms);
+    ?>
     <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
         <div class="card-modern p-6 rounded-xl shadow-sm border user-card btn-modern" style="border-color: #C19A6B;">
             <div class="flex items-center gap-4">
@@ -271,8 +447,9 @@ if(session_status() === PHP_SESSION_NONE) session_start();
                     <i class="fa-solid fa-bed text-white text-xl"></i>
                 </div>
                 <div>
-                    <h3 class="font-semibold text-[#5C4033]">Available Rooms</h3>
-                    <p class="text-2xl font-bold text-[#C19A6B]"><?= count($rooms) ?></p>
+                    <h3 class="font-semibold text-[#5C4033]">Open Rooms</h3>
+                    <p class="text-2xl font-bold text-[#C19A6B]"><?= $openRooms ?></p>
+                    <p class="text-xs text-[#5C4033] opacity-75"><?= $openBeds ?> open bed<?= $openBeds === 1 ? '' : 's' ?> • <?= $totalRoomsDisplay ?> total rooms</p>
                 </div>
             </div>
         </div>
@@ -400,68 +577,135 @@ if(session_status() === PHP_SESSION_NONE) session_start();
     <div class="rooms-grid-modern" id="roomsGrid">
         <?php if(!empty($rooms)): ?>
             <?php foreach($rooms as $room): ?>
+                <?php
+                    $pictureMeta = resolve_room_picture_paths($room['picture'] ?? '', $room['picture_hash'] ?? '');
+                    $hasPicture = $pictureMeta['has_picture'];
+                    $pictureUrl = $pictureMeta['web_path'];
+                    $availableSlots = isset($room['available']) ? max(0, (int) $room['available']) : 0;
+                    $roomIsAvailable = $availableSlots > 0;
+                    $roomDisplayName = trim((string)($room['display_name'] ?? ($room['room_name'] ?? 'Room')));
+                    $roomNumberDisplay = trim((string)($room['display_number'] ?? ($room['room_number'] ?? '')));
+                    if ($roomNumberDisplay === '' && $roomDisplayName !== '') {
+                        if (preg_match('/(\d+)/', $roomDisplayName, $numberMatch)) {
+                            $roomNumberDisplay = ltrim($numberMatch[1], '0');
+                            if ($roomNumberDisplay === '') {
+                                $roomNumberDisplay = '0';
+                            }
+                        }
+                    }
+                    if ($roomNumberDisplay === '' && isset($room['id'])) {
+                        $roomNumberDisplay = (string) $room['id'];
+                    }
+                    $roomNumberLabel = $roomNumberDisplay !== '' ? 'Room #' . $roomNumberDisplay : '';
+                    $priceCandidates = [
+                        $room['display_price'] ?? null,
+                        $room['monthly_rate'] ?? null,
+                        $room['payment'] ?? null,
+                    ];
+                    $rawPrice = 0.0;
+                    foreach ($priceCandidates as $candidate) {
+                        $candidateValue = normalize_room_price($candidate);
+                        if ($candidateValue > 0) {
+                            $rawPrice = $candidateValue;
+                            break;
+                        }
+                    }
+                ?>
                 <div class="card-modern p-4 rounded-lg shadow-sm border hover:shadow-md transition-all relative user-card room-card btn-modern" style="border-color: #C19A6B;">
                     <div class="absolute top-3 right-3">
-                        <span class="bg-green-100 text-green-800 px-1.5 py-0.5 rounded-full text-xs font-semibold">
-                            Available
+                        <span class="px-1.5 py-0.5 rounded-full text-xs font-semibold <?= $roomIsAvailable ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'; ?>">
+                            <?= $roomIsAvailable ? 'Available' : 'Not Available'; ?>
                         </span>
                     </div>
                     <div class="mb-3">
-                        <h2 class="text-lg font-bold text-[#5C4033] mb-1 room-number">Room #<?= htmlspecialchars($room['room_number']) ?></h2>
+                        <?php if ($hasPicture): ?>
+                            <img src="<?= htmlspecialchars($pictureUrl, ENT_QUOTES, 'UTF-8'); ?>" alt="Room <?= htmlspecialchars($room['room_number']); ?> picture" class="w-full h-40 object-cover rounded-lg border border-[#C19A6B] shadow-sm">
+                        <?php else: ?>
+                            <div class="w-full h-40 flex items-center justify-center rounded-lg border border-dashed border-[#C19A6B] text-sm text-[#5C4033] opacity-70 bg-[#fdf9f3]">
+                                <i class="fa-solid fa-bed mr-2"></i> No image available
+                            </div>
+                        <?php endif; ?>
+                    </div>
+                    <div class="mb-3">
+                        <h2 class="text-lg font-bold text-[#5C4033] mb-1 room-number"><?= htmlspecialchars($roomDisplayName) ?></h2>
+                        <?php if ($roomNumberLabel !== '' && stripos($roomDisplayName, $roomNumberDisplay) === false): ?>
+                            <p class="text-xs text-[#5C4033] opacity-70 mb-1"><?= htmlspecialchars($roomNumberLabel) ?></p>
+                        <?php endif; ?>
                         <p class="text-[#5C4033] opacity-75 text-xs mb-1">
                             <i class="fa-solid fa-bed text-[#C19A6B]"></i> 
                             <?= $room['beds'] ?? 'N/A' ?> Bed<?= ($room['beds'] ?? 0) > 1 ? 's' : '' ?>
                         </p>
                         <p class="text-[#5C4033] opacity-75 text-xs mb-1">
                             <i class="fa-solid fa-users text-[#C19A6B]"></i> 
-                            <?= $room['available'] ?> Space<?= $room['available'] > 1 ? 's' : '' ?> Available
+                            <?= $availableSlots ?> Space<?= $availableSlots === 1 ? '' : 's' ?> Available
                         </p>
                         <p class="text-[#5C4033] opacity-75 text-xs mb-1">
                             <i class="fa-solid fa-door-open text-[#C19A6B]"></i> 
-                            <strong><?= $room['available'] ?> Room<?= $room['available'] > 1 ? 's' : '' ?> can be reserved</strong>
+                            <?php if ($roomIsAvailable): ?>
+                                <strong><?= $availableSlots ?> Room<?= $availableSlots === 1 ? '' : 's' ?> can be reserved</strong>
+                            <?php else: ?>
+                                <span class="font-semibold text-red-600">Fully booked</span>
+                            <?php endif; ?>
                         </p>
                         <p class="text-[#5C4033] opacity-75 text-xs mb-3 room-type">
                             <i class="fa-solid fa-tag text-[#C19A6B]"></i> 
                             Dormitory Room
                         </p>
                         <div class="bg-[#e6ddd4] p-2 rounded-lg mb-3">
-                            <p class="text-lg font-bold text-[#5C4033] room-payment">₱<?= number_format($room['payment'] ?? 0, 2) ?></p>
+                            <p class="text-lg font-bold text-[#5C4033] room-payment">₱<?= number_format($rawPrice, 2) ?></p>
                             <p class="text-[#5C4033] opacity-75 text-xs">per month</p>
                         </div>
                     </div>
 
-                    <!-- Confirmation Message Area -->
-                    <div id="confirm-msg-<?= $room['id'] ?>" class="hidden bg-yellow-50 border border-yellow-200 p-2 rounded-lg mb-2">
-                        <p class="text-yellow-800 text-xs mb-2">
-                            <i class="fa-solid fa-question-circle"></i> 
-                            How many rooms in Room #<?= htmlspecialchars($room['room_number']) ?>?
-                        </p>
-                        <div class="mb-2">
-                            <label class="block text-yellow-700 text-xs font-semibold mb-1">Quantity:</label>
-                            <div class="flex items-center gap-1 justify-center">
-                                <button type="button" onclick="decreaseQuantity(<?= $room['id'] ?>)" class="bg-yellow-600 hover:bg-yellow-700 text-white w-6 h-6 rounded flex items-center justify-center text-xs">
-                                    <i class="fa-solid fa-minus"></i>
+                    <?php if ($roomIsAvailable): ?>
+                        <!-- Confirmation Message Area -->
+                        <div id="confirm-msg-<?= $room['id'] ?>" class="hidden bg-yellow-50 border border-yellow-200 p-2 rounded-lg mb-2">
+                            <p class="text-yellow-800 text-xs mb-2">
+                                <i class="fa-solid fa-question-circle"></i> 
+                                How many rooms in Room #<?= htmlspecialchars($roomNumberDisplay !== '' ? $roomNumberDisplay : ($room['room_number'] ?? '')) ?>?
+                            </p>
+                            <div class="mb-2">
+                                <label class="block text-yellow-700 text-xs font-semibold mb-1">Quantity:</label>
+                                <div class="flex items-center gap-1 justify-center">
+                                    <button type="button" onclick="decreaseQuantity(<?= $room['id'] ?>)" class="bg-yellow-600 hover:bg-yellow-700 text-white w-6 h-6 rounded flex items-center justify-center text-xs">
+                                        <i class="fa-solid fa-minus"></i>
+                                    </button>
+                                    <input type="number" id="quantity-<?= $room['id'] ?>" value="1" min="1" max="<?= $availableSlots ?>" class="w-12 text-center border border-yellow-300 rounded px-1 py-1 text-xs" onchange="validateQuantity(<?= $room['id'] ?>, <?= $availableSlots ?>)">
+                                    <button type="button" onclick="increaseQuantity(<?= $room['id'] ?>)" class="bg-yellow-600 hover:bg-yellow-700 text-white w-6 h-6 rounded flex items-center justify-center text-xs">
+                                        <i class="fa-solid fa-plus"></i>
+                                    </button>
+                                </div>
+                                <span class="text-yellow-700 text-xs block text-center mt-1">of <?= $availableSlots ?> available</span>
+                            </div>
+                            <div class="flex gap-1">
+                                <button onclick="submitReservationRequest(<?= $room['id'] ?>)" class="flex-1 bg-green-500 hover:bg-green-600 text-white px-2 py-1 rounded text-xs">
+                                    <i class="fa-solid fa-check"></i> Reserve
                                 </button>
-                                <input type="number" id="quantity-<?= $room['id'] ?>" value="1" min="1" max="<?= $room['available'] ?>" class="w-12 text-center border border-yellow-300 rounded px-1 py-1 text-xs" onchange="validateQuantity(<?= $room['id'] ?>, <?= $room['available'] ?>)">
-                                <button type="button" onclick="increaseQuantity(<?= $room['id'] ?>)" class="bg-yellow-600 hover:bg-yellow-700 text-white w-6 h-6 rounded flex items-center justify-center text-xs">
-                                    <i class="fa-solid fa-plus"></i>
+                                <button onclick="cancelReservation(<?= $room['id'] ?>)" class="flex-1 bg-gray-500 hover:bg-gray-600 text-white px-2 py-1 rounded text-xs">
+                                    <i class="fa-solid fa-times"></i> Cancel
                                 </button>
                             </div>
-                            <span class="text-yellow-700 text-xs block text-center mt-1">of <?= $room['available'] ?> available</span>
                         </div>
-                        <div class="flex gap-1">
-                            <button onclick="confirmReservation(<?= $room['id'] ?>)" class="flex-1 bg-green-500 hover:bg-green-600 text-white px-2 py-1 rounded text-xs">
-                                <i class="fa-solid fa-check"></i> Reserve
-                            </button>
-                            <button onclick="cancelReservation(<?= $room['id'] ?>)" class="flex-1 bg-gray-500 hover:bg-gray-600 text-white px-2 py-1 rounded text-xs">
-                                <i class="fa-solid fa-times"></i> Cancel
-                            </button>
-                        </div>
-                    </div>
+                    <?php endif; ?>
 
                     <?php if(isset($_SESSION['user'])): ?>
-                        <?php if($room['available'] > 0): ?>
-                            <form method="POST" action="http://localhost/lasttry/index.php/user/reserve/<?= $room['id'] ?>" class="w-full" id="reservation-form-<?= $room['id'] ?>">
+                        <?php if($roomIsAvailable): ?>
+                            <?php
+                                $reservationEndpoint = site_url('user/reserve');
+                                $endpointParts = parse_url($reservationEndpoint);
+                                $endpointPath = $endpointParts['path'] ?? '/user/reserve';
+                                $endpointQuery = !empty($endpointParts['query']) ? '?' . $endpointParts['query'] : '';
+                                $reservationRelativeEndpoint = $endpointPath . $endpointQuery;
+                            ?>
+                            <form
+                                method="POST"
+                                action="<?= htmlspecialchars($reservationRelativeEndpoint, ENT_QUOTES, 'UTF-8'); ?>"
+                                class="w-full"
+                                id="reservation-form-<?= $room['id'] ?>"
+                                data-reservation-endpoint="<?= htmlspecialchars($reservationRelativeEndpoint, ENT_QUOTES, 'UTF-8'); ?>"
+                            >
+                                <input type="hidden" name="room_id" value="<?= (int) $room['id']; ?>">
+                                <input type="hidden" name="quantity" value="1" id="quantity-hidden-<?= $room['id'] ?>">
                                 <button type="button" onclick="showConfirmation(<?= $room['id'] ?>)" class="w-full text-white py-2 px-3 rounded-lg font-semibold transition-all hover:bg-[#B07A4B] text-sm" style="background: #C19A6B;" id="reserve-btn-<?= $room['id'] ?>">
                                     <i class="fa-solid fa-paper-plane"></i> Request Reservation
                                 </button>
@@ -501,6 +745,21 @@ const sidebar = document.getElementById('sidebar');
 const mainContent = document.getElementById('mainContent');
 const toggleIcon = document.getElementById('toggleIcon');
 const roomsGrid = document.getElementById('roomsGrid');
+
+function normalizeActionUrl(rawUrl) {
+    if (!rawUrl) {
+        return '';
+    }
+    try {
+        const parsed = new URL(rawUrl, window.location.href);
+        parsed.protocol = window.location.protocol;
+        parsed.host = window.location.host;
+        return parsed.href;
+    } catch (error) {
+        console.warn('Unable to normalize reservation action URL', rawUrl, error);
+        return rawUrl;
+    }
+}
 
 // Check for saved sidebar state
 const isSidebarCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
@@ -558,55 +817,10 @@ function updateGridColumns(isCollapsed) {
         }
     }
 }
-</script>
+    </script>
 
-<script>
-// Dark mode functionality
-function initDarkMode() {
-    const darkModeToggle = document.getElementById("darkModeToggle");
-    const darkModeIcon = document.getElementById("darkModeIcon");
-    const mainBody = document.body;
-    
-    if (!darkModeToggle) return;
-    
-    // Check for saved dark mode preference
-    const isDarkMode = localStorage.getItem("userDarkMode") === "true";
-    if (isDarkMode) {
-        mainBody.classList.add("dark");
-        if(darkModeIcon) darkModeIcon.className = "fa-solid fa-sun";
-    }
-    
-    darkModeToggle.addEventListener("click", () => {
-        mainBody.classList.toggle("dark");
-        const isDark = mainBody.classList.contains("dark");
-        
-        // Save preference
-        localStorage.setItem("userDarkMode", isDark);
-        
-        // Update icon
-        if(darkModeIcon) {
-            darkModeIcon.className = isDark ? "fa-solid fa-sun" : "fa-solid fa-moon";
-        }
-        
-        // Update database setting via AJAX
-        fetch("<?= site_url('settings/update') ?>", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/x-www-form-urlencoded",
-            },
-            body: "dark_mode_user=" + (isDark ? "1" : "0") + "&ajax=1"
-        });
-    });
-}
-
-// Initialize when DOM is ready
-if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", initDarkMode);
-} else {
-    initDarkMode();
-}
-
-// Search functionality
+    <script>
+    // Search functionality
 document.addEventListener('DOMContentLoaded', function() {
     const searchInput = document.getElementById('searchInput');
     if (searchInput) {
@@ -627,6 +841,7 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         });
     }
+
 });
 
 // Confirmation dialog for reservations
@@ -664,77 +879,6 @@ function confirmReservation(roomId, roomNumber) {
             }
         };
     });
-}
-
-// Handle reservation form submission
-async function handleReservationSubmit(event, roomId, roomNumber) {
-    event.preventDefault();
-    
-    console.log('Reservation form submitted for room:', roomId, roomNumber);
-    
-    try {
-        const confirmed = await confirmReservation(roomId, roomNumber);
-        if (confirmed) {
-            console.log('Reservation confirmed, submitting via AJAX...');
-            
-            // Add loading state to button
-            const button = event.target.querySelector('button[type="submit"]');
-            let originalText = '';
-            if (button) {
-                originalText = button.innerHTML;
-                button.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Submitting...';
-                button.disabled = true;
-            }
-            
-            try {
-                // Submit reservation via AJAX
-                const response = await fetch(`<?= site_url('user/reserve/') ?>${roomId}`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded',
-                        'X-Requested-With': 'XMLHttpRequest'
-                    },
-                    body: `room_id=${roomId}`
-                });
-                
-                const result = await response.json();
-                
-                // Show message on the same page
-                showMessage(result.message, result.success ? 'success' : 'error');
-                
-                // If successful, refresh the page stats
-                if (result.success) {
-                    setTimeout(() => {
-                        location.reload();
-                    }, 2000);
-                }
-                
-            } catch (fetchError) {
-                console.error('AJAX Error:', fetchError);
-                showMessage('An error occurred while processing your request. Please try again.', 'error');
-            }
-            
-            // Re-enable button
-            if (button) {
-                button.innerHTML = originalText;
-                button.disabled = false;
-            }
-        } else {
-            console.log('Reservation cancelled by user');
-        }
-    } catch (error) {
-        console.error('Error in handleReservationSubmit:', error);
-        showMessage('An error occurred while processing your request. Please try again.', 'error');
-        
-        // Re-enable button on error
-        const button = event.target.querySelector('button[type="submit"]');
-        if (button) {
-            button.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Request Reservation';
-            button.disabled = false;
-        }
-    }
-    
-    return false;
 }
 
 // Function to show messages on the same page
@@ -831,69 +975,121 @@ function cancelReservation(roomId) {
     }
 }
 
-// Function to confirm reservation
-async function confirmReservation(roomId) {
+// Function to submit reservation after inline confirmation
+async function submitReservationRequest(roomId) {
     const form = document.getElementById(`reservation-form-${roomId}`);
     const confirmMsg = document.getElementById(`confirm-msg-${roomId}`);
     const quantityInput = document.getElementById(`quantity-${roomId}`);
-    const quantity = quantityInput ? quantityInput.value : 1;
-    
-    // Hide confirmation message
-    if (confirmMsg) {
-        confirmMsg.classList.add('hidden');
+    const quantityHidden = document.getElementById(`quantity-hidden-${roomId}`);
+    const quantity = quantityInput ? Math.max(1, parseInt(quantityInput.value, 10) || 1) : 1;
+    const reserveBtn = document.getElementById(`reserve-btn-${roomId}`);
+
+    if (!form) {
+        showMessage('Unable to prepare the reservation request. Please refresh and try again.', 'error');
+        return;
     }
-    
-    // Show loading state
+
+    if (quantityHidden) {
+        quantityHidden.value = quantity;
+    }
+
     if (confirmMsg) {
+        if (!confirmMsg.dataset.originalContent) {
+            confirmMsg.dataset.originalContent = confirmMsg.innerHTML;
+        }
+        confirmMsg.classList.remove('hidden');
+        confirmMsg.classList.remove('bg-yellow-50', 'border-yellow-200');
+        confirmMsg.classList.add('bg-blue-50', 'border-blue-200');
         confirmMsg.innerHTML = `
-            <p class="text-blue-800 text-sm">
-                <i class="fa-solid fa-spinner fa-spin"></i> 
-                Processing your reservation request for ${quantity} room${quantity > 1 ? 's' : ''}...
+            <p class="text-blue-800 text-sm flex items-center gap-2 justify-center">
+                <i class="fa-solid fa-spinner fa-spin"></i>
+                Processing your reservation for <strong>${quantity}</strong> room${quantity > 1 ? 's' : ''}...
             </p>
         `;
-        confirmMsg.classList.remove('hidden');
-        confirmMsg.className = confirmMsg.className.replace('bg-yellow-50 border-yellow-200', 'bg-blue-50 border-blue-200');
     }
-    
+
+    const endpoint = form.getAttribute('data-reservation-endpoint') || form.getAttribute('action') || '';
+
+    if (!endpoint) {
+        if (confirmMsg) {
+            confirmMsg.classList.remove('bg-blue-50', 'border-blue-200');
+            confirmMsg.classList.add('bg-red-50', 'border-red-200');
+            confirmMsg.innerHTML = '<p class="text-red-700 text-sm">Unable to determine the reservation endpoint. Please refresh and try again.</p>';
+        }
+        return;
+    }
+
+    const payload = new URLSearchParams();
+    payload.set('room_id', roomId);
+    payload.set('quantity', quantity);
+
     try {
-        // Submit reservation via AJAX with quantity
-        const response = await fetch(`<?= site_url('user/reserve/') ?>${roomId}`, {
+        const response = await fetch(endpoint, {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
+                'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
                 'X-Requested-With': 'XMLHttpRequest'
             },
-            body: `room_id=${roomId}&quantity=${quantity}`
+            credentials: 'same-origin',
+            body: payload.toString()
         });
-        
-        const result = await response.json();
-        
-        // Show message on the same page
+
+        const rawText = await response.text();
+        if (!response.ok) {
+            console.error('Reservation confirm failed', response.status, rawText);
+            showMessage(`Request failed (HTTP ${response.status}). Please try again or contact support.`, 'error');
+            if (confirmMsg) {
+                confirmMsg.classList.remove('bg-blue-50', 'border-blue-200');
+                confirmMsg.classList.add('bg-red-50', 'border-red-200');
+                confirmMsg.innerHTML = '<p class="text-red-700 text-sm">Reservation request could not be processed. Please try again.</p>';
+            }
+            if (reserveBtn) {
+                reserveBtn.style.display = 'block';
+            }
+            return;
+        }
+
+        let result;
+        try {
+            result = JSON.parse(rawText);
+        } catch (parseError) {
+            console.error('Reservation confirm returned non-JSON response:', rawText);
+            showMessage('Unexpected response from the server. Please try again or contact support.', 'error');
+            if (confirmMsg && confirmMsg.dataset.originalContent) {
+                confirmMsg.classList.remove('bg-blue-50', 'border-blue-200');
+                confirmMsg.classList.add('bg-yellow-50', 'border-yellow-200');
+                confirmMsg.innerHTML = confirmMsg.dataset.originalContent;
+            }
+            return;
+        }
+
         showMessage(result.message, result.success ? 'success' : 'error');
-        
-        // If successful, refresh the page stats
+
         if (result.success) {
             setTimeout(() => {
-                location.reload();
-            }, 2000);
+                window.location.reload();
+            }, 1500);
         } else {
-            // Reset the button state if there was an error
-            const reserveBtn = document.getElementById(`reserve-btn-${roomId}`);
-            if (reserveBtn && confirmMsg) {
+            if (confirmMsg && confirmMsg.dataset.originalContent) {
+                confirmMsg.classList.remove('bg-blue-50', 'border-blue-200');
+                confirmMsg.classList.add('bg-yellow-50', 'border-yellow-200');
+                confirmMsg.innerHTML = confirmMsg.dataset.originalContent;
+            }
+            if (reserveBtn) {
                 reserveBtn.style.display = 'block';
-                confirmMsg.classList.add('hidden');
             }
         }
-        
+
     } catch (fetchError) {
         console.error('AJAX Error:', fetchError);
         showMessage('An error occurred while processing your request. Please try again.', 'error');
-        
-        // Reset the button state on error
-        const reserveBtn = document.getElementById(`reserve-btn-${roomId}`);
-        if (reserveBtn && confirmMsg) {
+        if (confirmMsg && confirmMsg.dataset.originalContent) {
+            confirmMsg.classList.remove('bg-blue-50', 'border-blue-200');
+            confirmMsg.classList.add('bg-yellow-50', 'border-yellow-200');
+            confirmMsg.innerHTML = confirmMsg.dataset.originalContent;
+        }
+        if (reserveBtn) {
             reserveBtn.style.display = 'block';
-            confirmMsg.classList.add('hidden');
         }
     }
 }
@@ -955,6 +1151,44 @@ function handleEscKey(e) {
     }
 }
 </script>
+
+<?php if (!empty($paymentAlert['show'])): ?>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const modal = document.getElementById('paymentAlertModal');
+    const dismissBtn = document.getElementById('paymentAlertDismiss');
+    const laterBtn = document.getElementById('paymentAlertLater');
+
+    function closePaymentAlert() {
+        if (modal) {
+            modal.style.display = 'none';
+        }
+    }
+
+    if (dismissBtn) {
+        dismissBtn.addEventListener('click', function (event) {
+            event.preventDefault();
+            closePaymentAlert();
+        });
+    }
+
+    if (laterBtn) {
+        laterBtn.addEventListener('click', function (event) {
+            event.preventDefault();
+            closePaymentAlert();
+        });
+    }
+
+    if (modal) {
+        modal.addEventListener('click', function (event) {
+            if (event.target === modal) {
+                closePaymentAlert();
+            }
+        });
+    }
+});
+</script>
+<?php endif; ?>
 
 </body>
 </html>

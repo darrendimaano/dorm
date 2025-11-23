@@ -13,41 +13,21 @@ class SettingsController extends Controller {
     }
 
     public function getDarkMode($type = 'admin') {
-        $settings = $this->SettingsModel->getSettings();
-        if($type === 'admin') {
-            return isset($settings['dark_mode_admin']) ? $settings['dark_mode_admin'] : '0';
-        } else {
-            return isset($settings['dark_mode_user']) ? $settings['dark_mode_user'] : '0';
-        }
+        return '0';
     }
 
     public function update() {
         if($this->io->method() == 'post') {
-            // Check if it's an AJAX request for dark mode toggle
-            if($this->io->post('ajax')) {
-                $dark_mode_admin = $this->io->post('dark_mode_admin');
-                $data = ['dark_mode_admin' => $dark_mode_admin];
-                
-                if($this->SettingsModel->updateSettings($data)) {
-                    echo json_encode(['success' => true]);
-                } else {
-                    echo json_encode(['success' => false]);
-                }
-                exit;
-            }
-            
             // Regular form submission
             $site_name = $this->io->post('site_name');
             $admin_email = $this->io->post('admin_email');
-            $dark_mode_admin = $this->io->post('dark_mode_admin') ?? '0';
-            $dark_mode_user = $this->io->post('dark_mode_user') ?? '0';
             $maintenance_mode = $this->io->post('maintenance_mode') ?? '0';
 
             $data = [
                 'site_name' => $site_name,
                 'admin_email' => $admin_email,
-                'dark_mode_admin' => $dark_mode_admin,
-                'dark_mode_user' => $dark_mode_user,
+                'dark_mode_admin' => 0,
+                'dark_mode_user' => 0,
                 'maintenance_mode' => $maintenance_mode
             ];
 

@@ -1,10 +1,12 @@
 <?php
 defined('PREVENT_DIRECT_ACCESS') OR exit('No direct script access allowed');
 if(session_status() === PHP_SESSION_NONE) session_start();
+$darkModeEnabled = false;
+$messages = $messages ?? [];
 ?>
 
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="<?= $darkModeEnabled ? 'dark' : '' ?>">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -29,9 +31,37 @@ if(session_status() === PHP_SESSION_NONE) session_start();
   body {
     background: linear-gradient(135deg, #FFF5E1 0%, #F5E6D3 100%);
   }
+  .dark body {
+    background: #111111 !important;
+    color: #e5e5e5 !important;
+  }
+  .dark #sidebar {
+    background: #1a1a1a !important;
+  }
+  .dark [class*="bg-white"], .dark [class*="bg-[#FFF5E1]"] {
+    background: #1f1f1f !important;
+  }
+  .dark [class*="border-[#C19A6B]"] {
+    border-color: #3a3a3a !important;
+  }
+  .dark [class*="text-[#5C4033]"],
+  .dark [class*="text-gray-600"],
+  .dark [class*="text-gray-500"] {
+    color: #e5e5e5 !important;
+  }
+  .message-card {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+  .message-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 24px rgba(193, 154, 107, 0.25);
+  }
+  .dark .message-card:hover {
+    box-shadow: 0 14px 32px rgba(0, 0, 0, 0.45);
+  }
 </style>
 </head>
-<body class="font-sans flex min-h-screen">
+<body class="font-sans flex min-h-screen<?= $darkModeEnabled ? ' dark' : '' ?>">
 
 <!-- Sidebar -->
 <div id="sidebar" class="text-[#5C4033] w-64 min-h-screen p-6 fixed left-0 top-0 z-40 shadow-lg">
@@ -89,9 +119,11 @@ if(session_status() === PHP_SESSION_NONE) session_start();
       <h1 class="font-bold text-xl text-[#5C4033]">Contact Admin</h1>
       <p class="text-[#5C4033] opacity-75 text-sm">Get help and support from the dormitory administration</p>
     </div>
-    <div class="text-xs text-[#5C4033] opacity-75">
-      <i class="fa-solid fa-phone mr-1"></i>
-      09517394938
+    <div class="flex items-center gap-4 flex-wrap justify-end">
+      <div class="flex items-center gap-2 text-xs text-[#5C4033] opacity-75 dark:text-gray-300 dark:opacity-100">
+        <i class="fa-solid fa-phone"></i>
+        <span>09517394938</span>
+      </div>
     </div>
   </div>
 
@@ -212,6 +244,82 @@ if(session_status() === PHP_SESSION_NONE) session_start();
               </button>
             </div>
           </form>
+        </div>
+
+        <!-- Message History -->
+        <div class="mt-6">
+          <div class="flex items-center justify-between mb-4 flex-wrap gap-2">
+            <h3 class="text-lg font-semibold text-[#5C4033] dark:text-gray-100">
+              <i class="fa-solid fa-comments text-[#C19A6B] mr-2"></i>
+              Message History & Replies
+            </h3>
+            <?php if (!empty($messages)): ?>
+              <span class="text-sm text-[#5C4033] opacity-75 dark:text-gray-300">
+                <?= count($messages) ?> message<?= count($messages) === 1 ? '' : 's' ?>
+              </span>
+            <?php endif; ?>
+          </div>
+
+          <?php if (!empty($messages)): ?>
+            <div class="space-y-4">
+              <?php foreach ($messages as $message): ?>
+                <?php
+                  $status = $message['status'] ?? 'unread';
+                  $statusClasses = [
+                      'replied' => 'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-200',
+                      'read' => 'bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-200',
+                      'unread' => 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-200'
+                  ];
+                  $statusIcons = [
+                      'replied' => 'reply',
+                      'read' => 'eye',
+                      'unread' => 'envelope'
+                  ];
+                  $badgeClass = $statusClasses[$status] ?? 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200';
+                  $badgeIcon = $statusIcons[$status] ?? 'envelope';
+                  $createdAt = isset($message['created_at']) ? strtotime($message['created_at']) : null;
+                ?>
+                <div class="message-card bg-white border border-[#E5D3B3] rounded-xl p-5 shadow-sm dark:bg-[#1f1f1f] dark:border-gray-700">
+                  <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-3">
+                    <div class="space-y-1">
+                      <div class="text-sm text-gray-500 dark:text-gray-300 flex items-center gap-2">
+                        <i class="fa-solid fa-hashtag text-[#C19A6B]"></i>
+                        <span>Message #<?= htmlspecialchars($message['id']) ?></span>
+                        <?php if ($createdAt): ?>
+                          <span class="text-gray-400 dark:text-gray-400">· <?= date('M j, Y g:i A', $createdAt) ?></span>
+                        <?php endif; ?>
+                      </div>
+                      <h4 class="text-lg font-semibold text-[#5C4033] dark:text-gray-100"><?= htmlspecialchars($message['subject']) ?></h4>
+                    </div>
+                    <span class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm font-semibold <?= $badgeClass ?>">
+                      <i class="fa-solid fa-<?= $badgeIcon ?>"></i>
+                      <?= ucfirst($status) ?>
+                    </span>
+                  </div>
+                  <div class="bg-[#FFF5E1] border border-[#E5D3B3] rounded-lg p-4 mb-4 dark:bg-[#252525] dark:border-gray-700">
+                    <p class="text-sm text-gray-700 leading-relaxed dark:text-gray-200"><?= nl2br(htmlspecialchars($message['message'])) ?></p>
+                  </div>
+                  <?php if (!empty($message['admin_reply'])): ?>
+                    <div class="bg-green-50 border border-green-200 rounded-lg p-4 dark:bg-green-900/40 dark:border-green-700">
+                      <p class="text-sm font-semibold text-green-800 mb-1 flex items-center gap-2 dark:text-green-200">
+                        <i class="fa-solid fa-reply"></i> Admin Reply
+                      </p>
+                      <p class="text-sm text-green-700 leading-relaxed dark:text-green-100"><?= nl2br(htmlspecialchars($message['admin_reply'])) ?></p>
+                    </div>
+                  <?php else: ?>
+                    <p class="text-sm italic text-gray-500 dark:text-gray-300">Awaiting admin response.</p>
+                  <?php endif; ?>
+                </div>
+              <?php endforeach; ?>
+            </div>
+          <?php else: ?>
+            <div class="message-card bg-white border border-dashed border-[#C19A6B] rounded-xl p-6 text-center shadow-sm dark:bg-[#1f1f1f] dark:border-gray-700">
+              <i class="fa-solid fa-envelope-open text-3xl text-[#C19A6B] mb-3"></i>
+              <p class="text-sm text-[#5C4033] dark:text-gray-200">
+                You haven't sent any messages yet. Use the form above to reach out to the admin team.
+              </p>
+            </div>
+          <?php endif; ?>
         </div>
 
         <!-- Response Time Info -->

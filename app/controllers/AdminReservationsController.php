@@ -73,12 +73,12 @@ class AdminReservationsController extends Controller {
             if ($reservationsModel->updateStatus($id, 'approved')) {
                 // Update room availability (reduce by 1 when approved)
                 $roomsModel = new RoomsModel();
-                $room = $roomsModel->find($reservation['room_id']);
+                $room = $roomsModel->findRoom($reservation['room_id']);
                 if ($room && $room['available'] > 0) {
                     $newAvailability = $room['available'] - 1;
                     $roomsModel->update($reservation['room_id'], ['available' => $newAvailability]);
                 }
-                
+
                 // Auto-set stay dates and create payment reminders
                 require_once __DIR__ . '/NotificationController.php';
                 $notificationController = new NotificationController();
@@ -125,8 +125,9 @@ class AdminReservationsController extends Controller {
                 exit;
             }
             
-            // Update reservation status to rejected
-            if ($reservationsModel->updateStatus($id, 'rejected')) {
+            // Save rejection reason and update status
+            $rejection_reason = $_POST['rejection_reason'] ?? '';
+            if ($reservationsModel->rejectWithReason($id, $rejection_reason)) {
                 $_SESSION['success'] = "Reservation for {$reservation['fname']} {$reservation['lname']} has been rejected.";
             } else {
                 $_SESSION['error'] = 'Failed to reject reservation.';
@@ -171,12 +172,12 @@ class AdminReservationsController extends Controller {
             if ($reservationsModel->updateStatus($id, 'approved')) {
                 // Update room availability
                 $roomsModel = new RoomsModel();
-                $room = $roomsModel->find($reservation['room_id']);
+                $room = $roomsModel->findRoom($reservation['room_id']);
                 if ($room && $room['available'] > 0) {
                     $newAvailability = $room['available'] - 1;
                     $roomsModel->update($reservation['room_id'], ['available' => $newAvailability]);
                 }
-                
+
                 // Auto-set stay dates and create payment reminders
                 try {
                     require_once __DIR__ . '/NotificationController.php';
@@ -271,7 +272,7 @@ class AdminReservationsController extends Controller {
                 
                 if ($reservationsModel->updateStatus($id, 'approved')) {
                     // Update room availability
-                    $room = $roomsModel->find($reservation['room_id']);
+                    $room = $roomsModel->findRoom($reservation['room_id']);
                     if ($room && $room['available'] > 0) {
                         $newAvailability = $room['available'] - 1;
                         $roomsModel->update($reservation['room_id'], ['available' => $newAvailability]);
@@ -285,7 +286,7 @@ class AdminReservationsController extends Controller {
                     $successCount++;
                 }
             }
-            
+
             if ($successCount > 0) {
                 echo json_encode([
                     'success' => true, 
@@ -352,7 +353,7 @@ class AdminReservationsController extends Controller {
         $roomsModel = new RoomsModel();
         $reservationsModel = new ReservationsModel();
 
-        $room = $roomsModel->find($room_id);
+        $room = $roomsModel->findRoom($room_id);
         if(!$room) {
             $_SESSION['error'] = "Room not found.";
             header('Location: ' . site_url('rooms'));

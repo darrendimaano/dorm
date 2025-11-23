@@ -2,10 +2,12 @@
 defined('PREVENT_DIRECT_ACCESS') OR exit('No direct script access allowed');
 
 require_once __DIR__ . '/../config/DatabaseConfig.php';
+require_once __DIR__ . '/NotificationController.php';
 
 class ReportsController extends Controller
 {
     protected $db;
+    protected $notifier;
 
     public function __construct() {
         parent::__construct();
@@ -13,6 +15,12 @@ class ReportsController extends Controller
         // Initialize database connection
         $dbConfig = DatabaseConfig::getInstance();
         $this->db = $dbConfig->getConnection();
+
+        try {
+            $this->notifier = new NotificationController();
+        } catch (Exception $ignored) {
+            $this->notifier = null;
+        }
     }
 
     private function checkAdminSession() {
@@ -87,28 +95,62 @@ class ReportsController extends Controller
             $stmt = $this->db->query($query);
             $data['tenantReports'] = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-            // Get summary statistics
-            $summaryQuery = "
-                SELECT 
-                    COUNT(CASE WHEN r.status IN ('approved', 'confirmed') THEN 1 END) as total_active_tenants,
-                    0 as overdue_tenants,
-                    0 as due_soon_tenants,
-                    COALESCE(SUM(CASE WHEN r.status IN ('approved', 'confirmed') THEN rm.payment ELSE 0 END), 0) as total_monthly_revenue,
-                    COALESCE(AVG(rm.payment), 0) as average_room_price
-                FROM reservations r
-                JOIN rooms rm ON r.room_id = rm.id
-                WHERE r.status IN ('approved', 'confirmed')
-            ";
-            
-            $summaryStmt = $this->db->query($summaryQuery);
-            $summaryResult = $summaryStmt->fetch(PDO::FETCH_ASSOC);
-            $data['summary'] = $summaryResult ? $summaryResult : [
+            $summary = [
                 'total_active_tenants' => 0,
                 'overdue_tenants' => 0,
                 'due_soon_tenants' => 0,
                 'total_monthly_revenue' => 0,
                 'average_room_price' => 0
             ];
+
+            if (!empty($data['tenantReports'])) {
+                $summary['total_active_tenants'] = count($data['tenantReports']);
+
+                $todayTs = strtotime(date('Y-m-d'));
+                $dueSoonThreshold = strtotime('+3 days', $todayTs);
+
+                $totalRoomPrice = 0;
+                $roomCount = 0;
+
+                foreach ($data['tenantReports'] as $report) {
+                    $roomPrice = isset($report['room_price']) ? (float) $report['room_price'] : 0.0;
+                    if ($roomPrice > 0) {
+                        $totalRoomPrice += $roomPrice;
+                        $roomCount++;
+                    }
+
+                    if (!empty($report['monthly_due_date'])) {
+                        $dueTimestamp = strtotime($report['monthly_due_date']);
+                        if ($dueTimestamp !== false) {
+                            if ($dueTimestamp < $todayTs) {
+                                $summary['overdue_tenants']++;
+                            } elseif ($dueTimestamp <= $dueSoonThreshold) {
+                                $summary['due_soon_tenants']++;
+                            }
+                        }
+                    }
+                }
+
+                if ($roomCount > 0) {
+                    $summary['average_room_price'] = $totalRoomPrice / $roomCount;
+                }
+            }
+
+            try {
+                $revenueStmt = $this->db->query("
+                                        SELECT COALESCE(SUM(amount), 0) AS total
+                                        FROM payment_history
+                                        WHERE payment_date >= DATE_FORMAT(CURDATE(), '%Y-%m-01')
+                                            AND payment_date < DATE_ADD(DATE_FORMAT(CURDATE(), '%Y-%m-01'), INTERVAL 1 MONTH)
+                                            AND status = 'approved'
+                ");
+
+                $summary['total_monthly_revenue'] = (float) $revenueStmt->fetchColumn();
+            } catch (Exception $revenueException) {
+                // Keep revenue at zero if the query fails (e.g., table missing)
+            }
+
+            $data['summary'] = $summary;
 
         } catch (Exception $e) {
             $data['error'] = 'Error loading reports: ' . $e->getMessage();
@@ -166,14 +208,17 @@ class ReportsController extends Controller
                 exit;
             }
             
-            // Use NotificationController to process payment
+            // Use NotificationController to process payment request (pending approval)
             require_once __DIR__ . '/NotificationController.php';
             $notificationController = new NotificationController();
             
-            if ($notificationController->processPayment($reservation['id'], $amount_paid, $payment_date, $payment_method)) {
-                $_SESSION['success'] = "Payment of ₱" . number_format($amount_paid, 2) . " recorded for {$student['fname']} {$student['lname']}. Next due date updated automatically!";
-            } else {
-                $_SESSION['error'] = 'Failed to record payment.';
+            $notes = isset($_POST['notes']) ? trim((string) $_POST['notes']) : '';
+
+            try {
+                $notificationController->processPayment($reservation['id'], $amount_paid, $payment_date, $payment_method, $notes);
+                $_SESSION['success'] = "Payment of ₱" . number_format($amount_paid, 2) . " recorded for {$student['fname']} {$student['lname']}. Awaiting approval.";
+            } catch (Exception $processException) {
+                $_SESSION['error'] = 'Failed to record payment: ' . $processException->getMessage();
             }
             
         } catch (Exception $e) {

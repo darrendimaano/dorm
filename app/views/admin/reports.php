@@ -26,47 +26,41 @@ if(session_status() === PHP_SESSION_NONE) session_start();
   }
   .print-only { display: none; }
   
-  /* Flexible sidebar styles */
-  #sidebar {
-    transition: all 0.3s ease;
-    background: #D2B48C;
-    transform: translateX(0);
-  }
-  #sidebar.collapsed {
-    width: 4rem !important;
-    min-width: 4rem;
-  }
-  #sidebar.collapsed nav a span {
-    opacity: 0;
-    width: 0;
-    overflow: hidden;
-  }
-  #sidebar.collapsed nav a {
-    justify-content: center;
-    padding: 0.5rem;
-  }
-  #sidebar.collapsed h2 {
-    text-align: center;
-    font-size: 1.2rem;
-  }
-  .content-area {
-    transition: all 0.3s ease;
-    width: 100%;
-    max-width: none;
-  }
-  @media (max-width: 768px) {
+    /* Flexible sidebar styles */
     #sidebar {
-      position: fixed;
-      z-index: 1000;
-      transform: translateX(-100%);
+        transition: width 0.3s ease, transform 0.3s ease;
+        background: #D2B48C;
     }
-    #sidebar.show {
-      transform: translateX(0);
+    #sidebar.collapsed {
+        width: 4rem;
+        min-width: 4rem;
+    }
+    #sidebar.collapsed nav a span {
+        opacity: 0;
+        width: 0;
+        overflow: hidden;
+    }
+    #sidebar.collapsed nav a {
+        justify-content: center;
+        padding: 0.5rem;
+    }
+    #sidebar.collapsed .sidebar-text {
+        display: none;
     }
     .content-area {
-      margin-left: 0 !important;
+        transition: all 0.3s ease;
+        width: 100%;
+        max-width: none;
     }
-  }
+    @media (max-width: 768px) {
+        #sidebar {
+            position: fixed;
+            z-index: 1000;
+        }
+        .content-area {
+            margin-left: 0 !important;
+        }
+    }
   
   /* Professional Modern Enhancements */
   .card-modern {
@@ -118,56 +112,36 @@ if(session_status() === PHP_SESSION_NONE) session_start();
   }
 </style>
 </head>
-<body class="bg-white font-sans flex">
+<body class="min-h-screen bg-white font-sans transition-colors">
 
 <!-- Sidebar -->
-<div id="sidebar" class="text-[#5C4033] w-64 min-h-screen p-6 fixed left-0 top-0 z-50 shadow-lg">
-  <h2 class="text-2xl font-bold mb-8">🏨</h2>
-  <nav class="flex flex-col gap-4">
-    <a href="<?= site_url('dashboard') ?>" class="flex items-center gap-2 px-4 py-2 rounded hover:bg-[#C19A6B] transition">
-      <i class="fa-solid fa-chart-line"></i> <span>Dashboard</span>
-    </a>
-    <a href="<?=site_url('users')?>" class="flex items-center gap-2 px-4 py-2 rounded hover:bg-[#C19A6B] transition">
-      <i class="fa-solid fa-user"></i> <span>Users</span>
-    </a>
-    <a href="<?=site_url('rooms')?>" class="flex items-center gap-2 px-4 py-2 rounded hover:bg-[#C19A6B] transition">
-      <i class="fa-solid fa-bed"></i> <span>Rooms</span>
-    </a>
-    <a href="<?=site_url('admin/reservations')?>" class="flex items-center gap-2 px-4 py-2 rounded hover:bg-[#C19A6B] transition">
-      <i class="fa-solid fa-list-check"></i> <span>Reservations</span>
-    </a>
-    <a href="<?=site_url('admin/reports')?>" class="flex items-center gap-2 px-4 py-2 rounded bg-[#C19A6B] text-white font-semibold">
-      <i class="fa-solid fa-file-chart-line"></i> <span>Tenant Reports</span>
-    </a>
-    <a href="<?=site_url('admin/messages')?>" class="flex items-center gap-2 px-4 py-2 rounded hover:bg-[#C19A6B] transition">
-      <i class="fa-solid fa-envelope"></i> <span>Messages</span>
-    </a>
-    <a href="<?=site_url('settings')?>" class="flex items-center gap-2 px-4 py-2 rounded hover:bg-[#C19A6B] transition">
-      <i class="fa-solid fa-cog"></i> <span>Settings</span>
-    </a>
-    <a href="#" onclick="confirmLogout()" class="flex items-center gap-2 px-4 py-2 rounded hover:bg-red-300 transition mt-6">
-      <i class="fa-solid fa-right-from-bracket"></i> <span>Logout</span>
-    </a>
-  </nav>
-</div>
+<?php include __DIR__ . '/../includes/sidebar.php'; ?>
 
 <!-- Main Content -->
-<div class="flex-1 ml-64 transition-all duration-300 content-area" id="mainContent">
-  <div class="bg-[#FFF5E1] shadow-md flex items-center justify-between px-4 py-3">
-    <button id="menuBtn" class="text-[#5C4033] text-xl hover:bg-[#C19A6B] p-2 rounded transition">
-      <i class="fa-solid fa-bars"></i>
-    </button>
-    <h1 class="font-bold text-lg text-[#5C4033] flex items-center gap-2">
-      <i class="fa-solid fa-file-chart-line text-[#C19A6B]"></i>
-      Tenant Reports & Monitoring
-    </h1>
-    <div class="flex items-center gap-2 text-sm text-[#5C4033] opacity-75">
-      <i class="fa-solid fa-clock"></i>
-      <span id="currentTime"></span>
+<div class="flex-1 transition-all duration-300 content-area" id="mainContent" style="margin-left: 16rem;">
+    <div class="shadow-md flex items-center justify-between px-6 py-4 header-area" style="background: #FFF5E1;">
+        <div class="flex items-center gap-4">
+            <button id="sidebarToggle" class="text-[#5C4033] text-xl hover:bg-[#C19A6B] hover:text-white p-2 rounded-lg transition-all">
+                <i class="fa-solid fa-bars" id="toggleIcon"></i>
+            </button>
+            <button id="menuBtn" class="md:hidden text-[#5C4033] text-xl hover:bg-[#C19A6B] hover:text-white p-2 rounded-lg transition-all">
+                <i class="fa-solid fa-bars"></i>
+            </button>
+            <div>
+                <h1 class="font-bold text-xl text-[#5C4033] flex items-center gap-2">
+                    <i class="fa-solid fa-chart-line text-[#C19A6B]"></i>
+                    Tenant Reports & Monitoring
+                </h1>
+                <p class="text-sm text-[#5C4033] opacity-75">Monitor tenant status, payments, and reminders</p>
+            </div>
+        </div>
+        <div class="flex items-center gap-2 text-sm text-[#5C4033] opacity-75">
+            <i class="fa-solid fa-clock"></i>
+            <span id="currentTime"></span>
+        </div>
     </div>
-  </div>
 
-  <div class="w-full px-3 py-4">
+    <div class="w-full px-4 py-4">
     
     <!-- Success / Error Messages -->
     <?php if(!empty($success)): ?>
@@ -311,18 +285,6 @@ if(session_status() === PHP_SESSION_NONE) session_start();
                                 <span>Status</span>
                             </div>
                         </th>
-                        <th class="py-4 px-4 text-left font-semibold">
-                            <div class="flex items-center gap-1">
-                                <i class="fa-solid fa-peso-sign"></i>
-                                <span>Amount Due</span>
-                            </div>
-                        </th>
-                        <th class="py-4 px-4 text-center font-semibold">
-                            <div class="flex items-center justify-center gap-1">
-                                <i class="fa-solid fa-cogs"></i>
-                                <span>Actions</span>
-                            </div>
-                        </th>
                     </tr>
                 </thead>
                 <tbody class="bg-[#FFF5E1]">
@@ -386,30 +348,6 @@ if(session_status() === PHP_SESSION_NONE) session_start();
                             <span class="px-3 py-1 rounded-full text-sm font-semibold border <?= $statusColor ?>">
                                 <?= $report['stay_status'] ?>
                             </span>
-                        </td>
-                        <td class="py-4 px-4">
-                            <div>
-                                <p class="font-semibold text-lg text-[#5C4033]">₱<?= number_format($report['total_amount_due'], 2) ?></p>
-                                <p class="text-sm text-[#5C4033] opacity-75">Monthly Rent</p>
-                                <?php if($report['days_stayed'] > 0): ?>
-                                    <p class="text-xs text-[#C19A6B] mt-1"><?= $report['days_stayed'] ?> days since start</p>
-                                <?php endif; ?>
-                            </div>
-                        </td>
-                        <td class="py-4 px-4">
-                            <div class="flex flex-col gap-2">
-                                <button onclick="openPaymentModal(<?= $report['student_id'] ?>, '<?= htmlspecialchars($report['fname'] . ' ' . $report['lname']) ?>', <?= $report['total_amount_due'] ?>)" 
-                                        style="background: #C19A6B; color: white;" 
-                                        class="hover:bg-[#A67C52] px-3 py-1 rounded text-sm transition-all duration-200 font-semibold">
-                                    <i class="fa-solid fa-peso-sign"></i> Record Payment
-                                </button>
-                                <?php if(!$report['start_date']): ?>
-                                <button onclick="openDateModal(<?= $report['reservation_id'] ?>)" 
-                                        class="border border-[#C19A6B] text-[#5C4033] hover:bg-[#C19A6B] hover:text-white px-3 py-1 rounded text-sm transition-all duration-200 font-semibold">
-                                    <i class="fa-solid fa-calendar"></i> Set Dates
-                                </button>
-                                <?php endif; ?>
-                            </div>
                         </td>
                     </tr>
                     <?php endforeach; ?>
@@ -510,6 +448,9 @@ if(session_status() === PHP_SESSION_NONE) session_start();
     </div>
 </div>
 
+    <!-- Mobile Menu Overlay -->
+    <div id="mobileOverlay" class="fixed inset-0 bg-black bg-opacity-50 z-40 hidden md:hidden"></div>
+
 <script>
 // Current time display
 function updateTime() {
@@ -572,13 +513,105 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 
-// Sidebar toggle
-const sidebar = document.getElementById('sidebar');
+// Sidebar behavior helpers
+const sidebarElement = document.getElementById('sidebar');
+const sidebarToggle = document.getElementById('sidebarToggle');
+const toggleIcon = document.getElementById('toggleIcon');
+const mainContent = document.getElementById('mainContent');
 const menuBtn = document.getElementById('menuBtn');
+const mobileOverlay = document.getElementById('mobileOverlay');
 
-menuBtn.addEventListener('click', function() {
-    sidebar.classList.toggle('show');
+function updateMainContentMargin() {
+    if (!mainContent) {
+        return;
+    }
+
+    if (window.innerWidth < 768) {
+        mainContent.style.marginLeft = '0';
+        return;
+    }
+
+    const isCollapsed = sidebarElement && sidebarElement.classList.contains('collapsed');
+    mainContent.style.marginLeft = isCollapsed ? '4rem' : '16rem';
+}
+
+if (sidebarElement) {
+    const savedCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
+    if (savedCollapsed) {
+        sidebarElement.classList.add('collapsed');
+        if (toggleIcon) {
+            toggleIcon.className = 'fa-solid fa-times';
+        }
+    }
+}
+
+updateMainContentMargin();
+
+if (sidebarToggle) {
+    sidebarToggle.addEventListener('click', () => {
+        if (!sidebarElement) {
+            return;
+        }
+
+        sidebarElement.classList.toggle('collapsed');
+        const isCollapsed = sidebarElement.classList.contains('collapsed');
+
+        if (toggleIcon) {
+            toggleIcon.className = isCollapsed ? 'fa-solid fa-times' : 'fa-solid fa-bars';
+        }
+
+        localStorage.setItem('sidebarCollapsed', isCollapsed);
+        updateMainContentMargin();
+    });
+}
+
+if (menuBtn) {
+    menuBtn.addEventListener('click', () => {
+        if (!sidebarElement || !mobileOverlay) {
+            return;
+        }
+
+        const isHidden = sidebarElement.classList.contains('-translate-x-full');
+        if (isHidden) {
+            mobileOverlay.classList.add('hidden');
+        } else {
+            mobileOverlay.classList.remove('hidden');
+        }
+    });
+}
+
+if (mobileOverlay) {
+    mobileOverlay.addEventListener('click', () => {
+        mobileOverlay.classList.add('hidden');
+        if (sidebarElement) {
+            sidebarElement.classList.add('-translate-x-full');
+        }
+    });
+}
+
+window.addEventListener('resize', () => {
+    updateMainContentMargin();
+
+    if (window.innerWidth >= 768) {
+        if (mobileOverlay) {
+            mobileOverlay.classList.add('hidden');
+        }
+        if (sidebarElement) {
+            sidebarElement.classList.remove('-translate-x-full');
+        }
+    }
 });
+
+if (sidebarElement) {
+    const navLinks = sidebarElement.querySelectorAll('nav a');
+    navLinks.forEach(link => {
+        link.addEventListener('click', () => {
+            if (mobileOverlay) {
+                mobileOverlay.classList.add('hidden');
+            }
+        });
+    });
+}
 
 // Close modal when clicking outside
 document.addEventListener('click', function(e) {

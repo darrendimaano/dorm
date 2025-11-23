@@ -1,5 +1,105 @@
+<?php
+defined('PREVENT_DIRECT_ACCESS') OR exit('No direct script access allowed');
+if (session_status() === PHP_SESSION_NONE) {
+  session_start();
+}
+
+$darkModeEnabled = false;
+
+if (!function_exists('resolve_room_picture_paths')) {
+  function resolve_room_picture_paths($picturePath, $pictureHash = '') {
+    static $cachedRoot = null;
+    $result = [
+      'has_picture'   => false,
+      'absolute_path' => '',
+      'web_path'      => '',
+      'file_name'     => '',
+      'stored_path'   => $picturePath ?? ''
+    ];
+
+    if (empty($picturePath)) {
+      return $result;
+    }
+
+    if ($cachedRoot === null) {
+      $candidates = [
+        dirname(__DIR__, 2),
+        dirname(__DIR__, 3),
+        dirname(__DIR__, 4)
+      ];
+
+      foreach ($candidates as $candidate) {
+        if (is_string($candidate) && is_dir($candidate . DIRECTORY_SEPARATOR . 'public')) {
+          $cachedRoot = $candidate;
+          break;
+        }
+      }
+
+      if ($cachedRoot === null) {
+        $cachedRoot = dirname(__DIR__, 2);
+      }
+    }
+
+    $normalized = str_replace('\\', '/', $picturePath);
+    $result['stored_path'] = $normalized;
+
+    if (preg_match('#^https?://#i', $normalized)) {
+      $result['has_picture'] = true;
+      $result['web_path'] = $normalized;
+      $parsedPath = parse_url($normalized, PHP_URL_PATH);
+      $result['file_name'] = $parsedPath ? basename($parsedPath) : '';
+      if ($pictureHash !== '') {
+        $separator = strpos($normalized, '?') === false ? '?' : '&';
+        $result['web_path'] .= $separator . 'v=' . rawurlencode($pictureHash);
+      }
+      return $result;
+    }
+
+    $isAbsoluteFs = preg_match('#^(?:[a-zA-Z]:/|/)#', $normalized) === 1;
+    if ($isAbsoluteFs) {
+      $absolutePath = str_replace('/', DIRECTORY_SEPARATOR, $normalized);
+    } else {
+      $relative = ltrim($normalized, '/');
+      $absolutePath = $cachedRoot . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $relative);
+    }
+
+    if (!file_exists($absolutePath)) {
+      return $result;
+    }
+
+    $result['has_picture'] = true;
+    $result['absolute_path'] = $absolutePath;
+    $result['file_name'] = basename($absolutePath);
+
+    if ($isAbsoluteFs) {
+      $basePath = $cachedRoot;
+      $normalizedAbsolute = str_replace('\\', '/', $absolutePath);
+      $normalizedBase = rtrim(str_replace('\\', '/', $basePath), '/');
+      if (strpos($normalizedAbsolute, $normalizedBase . '/') === 0) {
+        $relativeFromBase = substr($normalizedAbsolute, strlen($normalizedBase . '/'));
+      } else {
+        $relativeFromBase = $result['file_name'];
+      }
+    } else {
+      $relativeFromBase = ltrim($normalized, '/');
+    }
+
+    $relativeFromBase = ltrim(str_replace('\\', '/', $relativeFromBase), '/');
+    $baseUrl = rtrim(base_url(), '/');
+    $webPath = $baseUrl . '/' . $relativeFromBase;
+    if ($pictureHash !== '') {
+      $webPath .= (strpos($webPath, '?') === false ? '?' : '&') . 'v=' . rawurlencode($pictureHash);
+    }
+
+    $result['web_path'] = $webPath;
+
+    return $result;
+  }
+}
+?>
+
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="<?= $darkModeEnabled ? 'dark' : '' ?>">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -26,36 +126,13 @@
   }
 </style>
 </head>
-<body class="bg-white font-sans flex">
+<body class="bg-[#FFF5E1] font-sans flex<?= $darkModeEnabled ? ' dark' : '' ?>">
 
 <!-- Sidebar -->
-<div id="sidebar" class="text-[#5C4033] w-64 min-h-screen p-6 fixed left-0 top-0 z-50 shadow-lg">
-  <h2 class="text-2xl font-bold mb-8">🏨</h2>
-  <nav class="flex flex-col gap-4">
-    <a href="<?= site_url('dashboard') ?>" class="flex items-center gap-2 px-4 py-2 rounded hover:bg-[#C19A6B] transition">
-      <i class="fa-solid fa-chart-line"></i> <span>Dashboard</span>
-    </a>
-    <a href="<?=site_url('users')?>" class="flex items-center gap-2 px-4 py-2 rounded hover:bg-[#C19A6B] transition">
-      <i class="fa-solid fa-user"></i> <span>Users</span>
-    </a>
- <a href="<?=site_url('admin/landing')?>" class="flex items-center gap-2 px-4 py-2 rounded hover:bg-[#C19A6B] transition">
-    <i class="fa-solid fa-list-check"></i> <span>Reservations</span>
-</a>
-
-    <a href="<?=site_url('rooms')?>" class="flex items-center gap-2 px-4 py-2 rounded hover:bg-[#C19A6B] transition">
-      <i class="fa-solid fa-bed"></i> <span>Rooms</span>
-    </a>
-    <a href="<?=site_url('settings')?>" class="flex items-center gap-2 px-4 py-2 rounded hover:bg-[#C19A6B] transition">
-      <i class="fa-solid fa-cog"></i> <span>Settings</span>
-    </a>
-    <a href="#" onclick="confirmLogout()" class="flex items-center gap-2 px-4 py-2 rounded hover:bg-red-300 transition mt-6">
-      <i class="fa-solid fa-right-from-bracket"></i> <span>Logout</span>
-    </a>
-  </nav>
-</div>
+<?php include __DIR__ . '/../includes/sidebar.php'; ?>
 
 <!-- Main content -->
-<div class="flex-1 ml-64 transition-all duration-300" id="mainContent">
+<div class="flex-1 ml-64 transition-all duration-300 main-content" id="mainContent">
   <div class="bg-[#FFF5E1] shadow-md flex items-center justify-between px-4 py-3 md:ml-0">
     <button id="menuBtn" class="md:hidden text-[#5C4033] text-xl">
       <i class="fa-solid fa-bars"></i>
@@ -141,12 +218,17 @@
         </div>
       <?php else: ?>
         <?php foreach($rooms as $room): ?>
+          <?php
+            $pictureMeta = resolve_room_picture_paths($room['picture'] ?? '', $room['picture_hash'] ?? '');
+            $hasPicture = $pictureMeta['has_picture'];
+            $pictureUrl = $pictureMeta['web_path'];
+          ?>
           <div class="bg-[#FFF5E1] shadow-lg rounded-2xl overflow-hidden border border-[#C19A6B] flex flex-col" id="room-<?= $room['id'] ?>">
             
             <!-- Room Picture -->
-            <?php if (!empty($room['picture']) && file_exists($room['picture'])): ?>
+            <?php if ($hasPicture): ?>
               <div class="relative h-48 overflow-hidden">
-                <img src="<?= site_url($room['picture']) ?>" alt="Room #<?= $room['room_number'] ?>" class="w-full h-full object-cover transition-transform duration-300 hover:scale-105">
+                <img src="<?= htmlspecialchars($pictureUrl, ENT_QUOTES, 'UTF-8'); ?>" alt="Room #<?= $room['room_number'] ?>" class="w-full h-full object-cover transition-transform duration-300 hover:scale-105">
                 <div class="absolute top-2 right-2 bg-[#C19A6B] text-white px-2 py-1 rounded-full text-xs font-semibold">
                   Room #<?= $room['room_number'] ?>
                 </div>
@@ -162,16 +244,14 @@
             <?php endif; ?>
             
             <div class="p-6 flex-1 flex flex-col justify-between">
-            <!-- Room Display -->
-            <div class="room-view">
-              <div class="space-y-3 mb-4">
+              <div class="space-y-3">
                 <div class="flex justify-between items-center">
                   <h2 class="text-xl font-bold text-[#5C4033]">Room #<?= $room['room_number'] ?></h2>
                   <span class="text-xs px-2 py-1 rounded-full text-white" style="background: #C19A6B;">
                     <i class="fas fa-home mr-1"></i>Dormitory
                   </span>
                 </div>
-                
+
                 <div class="grid grid-cols-2 gap-3 text-sm">
                   <div class="flex items-center text-[#5C4033]">
                     <i class="fas fa-bed mr-2 text-[#C19A6B]"></i>
@@ -184,54 +264,12 @@
                     </span>
                   </div>
                 </div>
-                
+
                 <div class="flex items-center justify-center bg-green-50 border border-green-200 rounded-lg p-3">
                   <i class="fas fa-peso-sign mr-2 text-green-600"></i>
                   <span class="text-green-600 font-bold text-lg">₱<?= number_format($room['payment'], 2) ?>/month</span>
                 </div>
               </div>
-            </div>
-
-            <!-- Update Form -->
-            <div class="room-edit hidden">
-              <form method="POST" action="<?=site_url('rooms/update/'.$room['id'])?>" enctype="multipart/form-data">
-                <input type="hidden" name="existing_picture" value="<?= htmlspecialchars($room['picture'] ?? '') ?>">
-                <div class="grid grid-cols-1 gap-3">
-                  <input type="text" name="room_number" value="<?= htmlspecialchars($room['room_number']) ?>" placeholder="Room Number" class="border border-[#C19A6B] p-3 rounded-lg w-full" required>
-                  <input type="number" name="beds" value="<?= htmlspecialchars($room['beds']) ?>" placeholder="Beds" class="border border-[#C19A6B] p-3 rounded-lg w-full" min="1" required>
-                  <input type="number" name="available" value="<?= htmlspecialchars($room['available']) ?>" placeholder="Available" class="border border-[#C19A6B] p-3 rounded-lg w-full" min="0" required>
-                  <input type="number" name="payment" value="<?= htmlspecialchars($room['payment']) ?>" placeholder="Payment" step="0.01" class="border border-[#C19A6B] p-3 rounded-lg w-full" min="0" required>
-                  
-                  <div>
-                    <label class="block text-[#5C4033] font-semibold mb-1">
-                      <i class="fas fa-camera mr-2"></i>Update Picture (optional)
-                    </label>
-                    <input type="file" name="picture" accept="image/*" class="border border-[#C19A6B] p-3 rounded-lg w-full">
-                    <?php if (!empty($room['picture'])): ?>
-                      <p class="text-xs text-[#5C4033] opacity-70 mt-1">Current: <?= basename($room['picture']) ?></p>
-                    <?php endif; ?>
-                  </div>
-                </div>
-                <div class="flex justify-between mt-4">
-                  <button type="submit" class="bg-[#C19A6B] hover:bg-[#B07A4B] text-white px-4 py-2 rounded-lg shadow flex items-center gap-2 transition duration-200">
-                    <i class="fa-solid fa-save"></i> Save Changes
-                  </button>
-                  <button type="button" class="cancelEdit bg-gray-300 hover:bg-gray-400 text-gray-800 px-4 py-2 rounded-lg shadow">Cancel</button>
-                </div>
-              </form>
-            </div>
-
-            <!-- Action Buttons -->
-            <div class="flex justify-between mt-4 room-actions">
-              <button class="editRoom bg-[#C19A6B] hover:bg-[#B07A4B] text-white px-4 py-2 rounded-lg shadow flex items-center gap-2 transition duration-200">
-                <i class="fa-solid fa-pen-to-square"></i> Update
-              </button>
-              <form method="POST" action="<?=site_url('rooms/delete/'.$room['id'])?>" style="display: inline;" onsubmit="return confirm('Are you sure you want to delete Room #<?= htmlspecialchars($room['room_number']) ?>?')">
-                <button type="submit" class="bg-red-400 hover:bg-red-500 text-white px-4 py-2 rounded-lg shadow flex items-center gap-2 transition duration-200">
-                  <i class="fa-solid fa-trash"></i> Delete
-                </button>
-              </form>
-            </div>
             </div>
           </div>
         <?php endforeach; ?>
@@ -272,64 +310,6 @@ document.addEventListener('DOMContentLoaded', function() {
       }
     });
   }
-});
-
-// Edit room functionality
-document.querySelectorAll('.editRoom').forEach(button => {
-  button.addEventListener('click', (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    
-    // Find the closest room container
-    const roomContainer = e.target.closest('.bg-white.rounded-xl.shadow-lg');
-    if (!roomContainer) return;
-    
-    const roomView = roomContainer.querySelector('.room-view');
-    const roomEdit = roomContainer.querySelector('.room-edit');
-    const roomActions = roomContainer.querySelector('.room-actions');
-    
-    if (roomView) roomView.classList.add('hidden');
-    if (roomEdit) roomEdit.classList.remove('hidden');
-    if (roomActions) roomActions.classList.add('hidden');
-  });
-});
-
-// Cancel edit
-document.querySelectorAll('.cancelEdit').forEach(button => {
-  button.addEventListener('click', (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    
-    // Find the closest room container
-    const roomContainer = e.target.closest('.bg-white.rounded-xl.shadow-lg');
-    if (!roomContainer) return;
-    
-    const roomView = roomContainer.querySelector('.room-view');
-    const roomEdit = roomContainer.querySelector('.room-edit');
-    const roomActions = roomContainer.querySelector('.room-actions');
-    
-    if (roomView) roomView.classList.remove('hidden');
-    if (roomEdit) roomEdit.classList.add('hidden');
-    if (roomActions) roomActions.classList.remove('hidden');
-  });
-});
-
-// Handle form submissions for room updates
-document.querySelectorAll('.room-edit form').forEach(form => {
-  form.addEventListener('submit', function(e) {
-    const submitButton = this.querySelector('button[type="submit"]');
-    if (submitButton) {
-      const originalText = submitButton.innerHTML;
-      submitButton.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Saving...';
-      submitButton.disabled = true;
-      
-      // Re-enable button after timeout as fallback
-      setTimeout(() => {
-        submitButton.innerHTML = originalText;
-        submitButton.disabled = false;
-      }, 10000);
-    }
-  });
 });
 
 // Custom logout confirmation modal

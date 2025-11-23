@@ -1,45 +1,24 @@
+<?php
+defined('PREVENT_DIRECT_ACCESS') OR exit('No direct script access allowed');
+if (session_status() === PHP_SESSION_NONE) session_start();
+$darkModeEnabled = false;
+?>
+
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="<?= $darkModeEnabled ? 'dark' : '' ?>">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Dashboard - TEST</title>
     <!-- ALL EXTERNAL SCRIPTS DISABLED FOR TESTING -->
 </head>
-<body class="bg-white font-sans flex">
+<body class="bg-white font-sans flex<?= $darkModeEnabled ? ' dark' : '' ?>">
 
 <!-- Sidebar -->
-<div class="text-[#5C4033] w-64 min-h-screen p-6 fixed left-0 top-0 z-50 shadow-lg" style="background: #D2B48C;">
-  <h2 class="text-2xl font-bold mb-8">🏨 CLEAN ADMIN</h2>
-  <div class="flex flex-col gap-4" id="clean-navigation">
-    <a href="<?= site_url('dashboard') ?>" class="nav-item dashboard">Dashboard</a>
-    <a href="<?=site_url('users')?>" class="nav-item users">Users</a>
-    <a href="<?=site_url('rooms')?>" class="nav-item rooms">Rooms</a>
-    <a href="<?=site_url('admin/reservations')?>" class="nav-item bookings">Booking System</a>
-    <a href="<?=site_url('admin/reports')?>" class="nav-item reports">Tenant Reports</a>
-    <a href="<?=site_url('settings')?>" class="nav-item settings">Settings</a>
-    <a href="<?=site_url('auth/logout')?>" class="nav-item logout">Logout</a>
-  </div>
-</div>
+<?php include __DIR__ . '/../includes/sidebar.php'; ?>
 
 <style>
-.nav-item {
-  display: block;
-  padding: 12px 16px;
-  color: #5C4033;
-  text-decoration: none;
-  border-radius: 8px;
-  transition: background-color 0.2s;
-}
-.nav-item:hover {
-  background-color: #C19A6B;
-  color: white;
-}
-.nav-item.dashboard {
-  background-color: #C19A6B;
-  color: white;
-  font-weight: bold;
-}
+<?php /* Sidebar styling handled by shared include */ ?>
 </style>
 
 <!-- Main content -->
