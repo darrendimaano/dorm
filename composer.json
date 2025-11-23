@@ -1,10 +1,5 @@
 {
     "require": {
-        "php": "^8.0",
-        "phpmailer/phpmailer": "^6.9",
-        "dompdf/dompdf": "^3.1"
-    },
-    "autoload": {
-        "classmap": ["app/"]
-    }
+    "php": "^8.0"
+}
 }
