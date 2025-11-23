@@ -25,11 +25,11 @@ class DatabaseConfig {
     private function loadConfig() {
         // Load from environment variables or fall back to defaults
         $this->config = [
-            'host' => $_ENV['DB_HOST'] ?? 'sql12.freesqldatabase.com',
+            'host' => $_ENV['DB_HOST'] ?? 'sql203.infinityfree.com',
             'port' => $_ENV['DB_PORT'] ?? '3306',
-            'database' => $_ENV['DB_DATABASE'] ?? 'sql12809018',
-            'username' => $_ENV['DB_USERNAME'] ?? 'sql12809018',
-            'password' => $_ENV['DB_PASSWORD'] ?? 'EW7YmUJj4D',
+            'database' => $_ENV['DB_DATABASE'] ?? 'if0_40489325_dormitory',
+            'username' => $_ENV['DB_USERNAME'] ?? 'if0_40489325',
+            'password' => $_ENV['DB_PASSWORD'] ?? 'nsFuuGjTat1T4L',
             'charset' => 'utf8mb4'
         ];
     }

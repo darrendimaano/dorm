@@ -115,10 +115,10 @@ class AuthController extends Controller {
                 $data['error'] = "Invalid email format.";
             } else {
                 // Connect to DB
-                $host = 'sql12.freesqldatabase.com';
-                $dbname = 'sql12809018';
-                $username = 'sql12809018';
-                $dbpass = 'EW7YmUJj4D';
+                $host = 'sql203.infinityfree.com';
+                $dbname = 'if0_40489325_dormitory';
+                $username = 'if0_40489325';
+                $dbpass = 'nsFuuGjTat1T4L';
                 $charset = 'utf8mb4';
 
                 $dsn = "mysql:host=$host;dbname=$dbname;charset=$charset";
