@@ -115,10 +115,10 @@ class AuthController extends Controller {
                 $data['error'] = "Invalid email format.";
             } else {
                 // Connect to DB
-                $host = 'localhost';
-                $dbname = 'mockdata';
-                $username = 'jeany';
-                $dbpass = 'jeany';
+                $host = 'sql12.freesqldatabase.com';
+                $dbname = 'sql12809018';
+                $username = 'sql12809018';
+                $dbpass = 'EW7YmUJj4D';
                 $charset = 'utf8mb4';
 
                 $dsn = "mysql:host=$host;dbname=$dbname;charset=$charset";
@@ -137,11 +137,18 @@ class AuthController extends Controller {
                         // Hash password
                         $hashed = password_hash($password, PASSWORD_DEFAULT);
 
-                        // Insert student without email verification (will use captcha instead)
-                        $insert = $pdo->prepare("INSERT INTO students (fname, lname, email, password, email_verified) VALUES (?, ?, ?, ?, 0)");
-                        $insert->execute([$fname, $lname, $email, $hashed]);
+                        // Generate verification PIN
+                        $verification_pin = str_pad(rand(0, 999999), 6, '0', STR_PAD_LEFT);
+                        $pin_expires = date('Y-m-d H:i:s', strtotime('+1 hour'));
 
-                        $_SESSION['success'] = "Registration successful! Please complete the captcha to verify your account.";
+                        // Insert student with PIN
+                        $insert = $pdo->prepare("INSERT INTO students (fname, lname, email, password, verification_pin, pin_expires, email_verified) VALUES (?, ?, ?, ?, ?, ?, 0)");
+                        $insert->execute([$fname, $lname, $email, $hashed, $verification_pin, $pin_expires]);
+
+                        // Send verification email
+                        $this->sendVerificationEmail($email, "$fname $lname", $verification_pin);
+
+                        $_SESSION['success'] = "Registration successful! Please check your email for the verification PIN.";
                         $_SESSION['verification_email'] = $email;
                         header("Location: " . site_url('auth/verify'));
                         exit;
@@ -160,56 +167,50 @@ class AuthController extends Controller {
     public function verify() {
         if (session_status() === PHP_SESSION_NONE) session_start();
         
-        error_log("DEBUG: Verify method called");
-        
         if (!isset($_SESSION['verification_email'])) {
-            error_log("DEBUG: No verification_email in session, redirecting to register");
             header('Location: ' . site_url('auth/register'));
             exit;
         }
-        
-        error_log("DEBUG: Verification email in session: " . $_SESSION['verification_email']);
 
-        // Generate captcha if not exists
-        if (!isset($_SESSION['captcha'])) {
-            $_SESSION['captcha'] = $this->generateCaptcha();
-        }
-        
         $data = [
-            'error' => '', 
-            'success' => '', 
-            'email' => $_SESSION['verification_email'],
-            'captcha_question' => $_SESSION['captcha']['question']
+            'error' => '',
+            'success' => '',
+            'email' => $_SESSION['verification_email']
         ];
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $captcha_answer = trim($_POST['captcha'] ?? '');
-            
-            if (empty($captcha_answer)) {
-                $data['error'] = "Please solve the captcha.";
-                $_SESSION['captcha'] = $this->generateCaptcha(); // Generate new captcha
-                $data['captcha_question'] = $_SESSION['captcha']['question'];
-            } elseif ($captcha_answer != $_SESSION['captcha']['answer']) {
-                $data['error'] = "Incorrect captcha answer. Please try again.";
-                $_SESSION['captcha'] = $this->generateCaptcha(); // Generate new captcha
-                $data['captcha_question'] = $_SESSION['captcha']['question'];
+            $pin = trim($_POST['pin'] ?? '');
+
+            if (empty($pin)) {
+                $data['error'] = "Please enter the verification PIN.";
             } else {
                 try {
                     $dbConfig = DatabaseConfig::getInstance();
                     $pdo = $dbConfig->getConnection();
 
-                    // Verify and activate account
-                    $stmt = $pdo->prepare("UPDATE students SET email_verified = 1 WHERE email = ? AND email_verified = 0");
-                    if ($stmt->execute([$_SESSION['verification_email']]) && $stmt->rowCount() > 0) {
-                        unset($_SESSION['verification_email']);
-                        unset($_SESSION['captcha']);
-                        $_SESSION['success'] = "Account verified successfully! You can now log in.";
-                        header("Location: " . site_url('auth/login'));
-                        exit;
+                    // Get student record
+                    $stmt = $pdo->prepare("SELECT id, verification_pin, pin_expires, email_verified FROM students WHERE email = ?");
+                    $stmt->execute([$_SESSION['verification_email']]);
+                    $student = $stmt->fetch(PDO::FETCH_ASSOC);
+
+                    if ($student && $student['email_verified'] == 0) {
+                        if ($student['verification_pin'] === $pin) {
+                            if (strtotime($student['pin_expires']) > time()) {
+                                // Mark as verified
+                                $update = $pdo->prepare("UPDATE students SET email_verified = 1, verification_pin = NULL, pin_expires = NULL WHERE id = ?");
+                                $update->execute([$student['id']]);
+                                unset($_SESSION['verification_email']);
+                                $_SESSION['success'] = "Account verified successfully! You can now log in.";
+                                header("Location: " . site_url('auth/login'));
+                                exit;
+                            } else {
+                                $data['error'] = "Verification PIN has expired. Please request a new one.";
+                            }
+                        } else {
+                            $data['error'] = "Incorrect PIN. Please try again.";
+                        }
                     } else {
                         $data['error'] = "Account not found or already verified.";
-                        $_SESSION['captcha'] = $this->generateCaptcha();
-                        $data['captcha_question'] = $_SESSION['captcha']['question'];
                     }
 
                 } catch (PDOException $e) {
